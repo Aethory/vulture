@@ -263,7 +263,7 @@ fn disk_free() -> (f64, f64) {
         Ok(d) => d,
         Err(_) => return (0.0, 0.0),
     };
-    let list: &[sysinfo::Disk] = &disks;
+    let list = &disks[..];
     let system_drive = Path::new("C:\\");
     let disk = list
         .iter()

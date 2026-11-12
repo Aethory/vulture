@@ -53,16 +53,19 @@ impl CleanerTab {
     }
 
     fn start_clean(&mut self) {
-        let selected: Vec<CategoryId> = self.checked.iter().copied().collect();
+        // Hand the worker its own copy of the scan.
+        let snapshot = self.scans.clone().unwrap_or_default();
+        let selected: Vec<CategoryId> = snapshot
+            .iter()
+            .filter(|s| self.checked.contains(&s.id))
+            .map(|s| s.id)
+            .collect();
         let empty_bin = self.empty_bin;
         self.busy = true;
         self.phase = "Cleaning";
         self.report = None;
         let (tx, rx) = mpsc::channel();
         self.rx = Some(rx);
-
-        // Hand the worker its own copy of the scan.
-        let snapshot = self.scans.clone().unwrap_or_default();
 
         thread::spawn(move || {
             let mut report = scanner::clean(&snapshot, &selected);

@@ -247,14 +247,13 @@ pub fn clean(scans: &[CategoryScan], selected: &[CategoryId]) -> CleanReport {
 /// Empty the Windows Recycle Bin. Returns a human-readable error on failure.
 pub fn empty_recycle_bin() -> Result<(), String> {
     use windows::core::PCWSTR;
-    use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::Shell::{
         SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPROGRESSUI, SHERB_NOSOUND,
     };
 
     let result = unsafe {
         SHEmptyRecycleBinW(
-            Some(HWND::default()),
+            None,
             PCWSTR::null(),
             SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND,
         )
