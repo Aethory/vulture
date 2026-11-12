@@ -56,7 +56,12 @@ fn point_seg_distance(px: f32, py: f32, ax: f32, ay: f32, bx: f32, by: f32) -> f
     let apx = px - ax;
     let apy = py - ay;
     let len_sq = abx * abx + aby * aby;
-    let t = ((apx * abx + apy * aby) / len_sq).clamp(0.0, 1.0);
+    let t = if len_sq == 0.0 {
+        // Degenerate segment — a single point; measure distance to it.
+        0.0
+    } else {
+        ((apx * abx + apy * aby) / len_sq).clamp(0.0, 1.0)
+    };
     let cx = ax + t * abx;
     let cy = ay + t * aby;
     (px - cx).hypot(py - cy)
