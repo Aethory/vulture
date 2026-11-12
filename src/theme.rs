@@ -1,7 +1,7 @@
 //! Neo-brutalist theme: paper background, ink borders, hard offset shadows,
 //! bold type. Everything visual routes through here so the app re-themes in one place.
 
-use egui::{Color32, FontId, Margin, Rounding, Stroke, Visuals};
+use egui::{Color32, CornerRadius, FontId, Margin, Stroke, Visuals};
 
 // Ink & paper
 pub const INK: Color32 = Color32::from_rgb(26, 22, 18);
@@ -58,13 +58,13 @@ pub fn apply(ctx: &egui::Context, accent: Color32) {
 pub fn card(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::new()
         .fill(INK)
-        .corner_radius(Rounding::same(6))
+        .corner_radius(CornerRadius::same(6))
         .inner_margin(Margin { left: 0, top: 0, right: 6, bottom: 6 })
         .show(ui, |ui| {
             egui::Frame::new()
                 .fill(CARD)
                 .stroke(Stroke::new(2.0, INK))
-                .corner_radius(Rounding::same(6))
+                .corner_radius(CornerRadius::same(6))
                 .inner_margin(Margin::same(16))
                 .show(ui, add);
         });
@@ -102,7 +102,7 @@ pub fn primary_button(ui: &mut egui::Ui, text: &str, accent: Color32) -> egui::R
         )
         .fill(accent)
         .stroke(Stroke::new(2.5, INK))
-        .corner_radius(Rounding::same(6))
+        .corner_radius(CornerRadius::same(6))
         .min_size(egui::vec2(0.0, 42.0)),
     )
 }
@@ -117,7 +117,7 @@ pub fn danger_button(ui: &mut egui::Ui, text: &str) -> egui::Response {
         )
         .fill(RED)
         .stroke(Stroke::new(2.5, INK))
-        .corner_radius(Rounding::same(6)),
+        .corner_radius(CornerRadius::same(6)),
     )
 }
 
@@ -126,7 +126,7 @@ pub fn ghost_button(ui: &mut egui::Ui, text: &str) -> egui::Response {
         egui::Button::new(egui::RichText::new(text.to_uppercase()).strong().color(INK))
             .fill(CARD_HI)
             .stroke(Stroke::new(2.0, INK))
-            .corner_radius(Rounding::same(6)),
+            .corner_radius(CornerRadius::same(6)),
     )
 }
 
@@ -148,7 +148,7 @@ pub fn success_banner(ui: &mut egui::Ui, text: &str) {
     egui::Frame::new()
         .fill(Color32::from_rgb(226, 245, 234))
         .stroke(Stroke::new(2.0, GREEN))
-        .corner_radius(Rounding::same(6))
+        .corner_radius(CornerRadius::same(6))
         .inner_margin(Margin::same(12))
         .show(ui, |ui| {
             ui.label(egui::RichText::new(format!("DONE — {text}")).strong().color(Color32::from_rgb(23, 71, 46)));
@@ -159,7 +159,7 @@ pub fn error_banner(ui: &mut egui::Ui, text: &str) {
     egui::Frame::new()
         .fill(Color32::from_rgb(252, 228, 220))
         .stroke(Stroke::new(2.0, RED))
-        .corner_radius(Rounding::same(6))
+        .corner_radius(CornerRadius::same(6))
         .inner_margin(Margin::same(12))
         .show(ui, |ui| {
             ui.label(egui::RichText::new(format!("ERROR — {text}")).strong().color(Color32::from_rgb(95, 31, 15)));
@@ -170,7 +170,7 @@ pub fn info_banner(ui: &mut egui::Ui, text: &str) {
     egui::Frame::new()
         .fill(Color32::from_rgb(236, 230, 216))
         .stroke(Stroke::new(2.0, INK))
-        .corner_radius(Rounding::same(6))
+        .corner_radius(CornerRadius::same(6))
         .inner_margin(Margin::same(12))
         .show(ui, |ui| {
             ui.label(egui::RichText::new(format!("NOTE — {text}")).color(INK));
@@ -181,7 +181,7 @@ pub fn info_banner(ui: &mut egui::Ui, text: &str) {
 pub fn tag(ui: &mut egui::Ui, text: &str) {
     egui::Frame::new()
         .fill(INK)
-        .corner_radius(Rounding::same(4))
+        .corner_radius(CornerRadius::same(4))
         .inner_margin(Margin::symmetric(6, 2))
         .show(ui, |ui| {
             ui.label(egui::RichText::new(text.to_uppercase()).font(FontId::proportional(9.0)).strong().color(PAPER));
