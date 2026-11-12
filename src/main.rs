@@ -10,8 +10,7 @@ mod ui;
 fn main() -> eframe::Result<()> {
     // Headless mode used by the Windows scheduled task.
     if std::env::args().any(|a| a == "--auto-clean") {
-        let report = core::auto_clean::run();
-        std::process::exit(if report.failures.is_empty() { 0 } else { 1 });
+        std::process::exit(if core::auto_clean::run() { 0 } else { 1 });
     }
 
     let options = eframe::NativeOptions {

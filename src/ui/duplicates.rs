@@ -5,7 +5,8 @@ use crate::theme;
 use crate::ui::fmt_bytes;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::{Arc, AtomicBool, mpsc};
+use std::sync::{Arc, mpsc};
+use std::sync::atomic::AtomicBool;
 use std::thread;
 
 pub struct DuplicatesTab {

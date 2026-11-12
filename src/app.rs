@@ -52,7 +52,7 @@ impl VultureApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
             tab: Tab::Dashboard,
-            sys: System::new(),
+            sys: System::new().expect("Vulture needs sysinfo to talk to Windows — it failed to start"),
             config: Config::load(),
             dashboard: ui::dashboard::DashboardTab::default(),
             cleaner: ui::cleaner::CleanerTab::default(),
@@ -83,15 +83,16 @@ impl VultureApp {
 }
 
 impl eframe::App for VultureApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx().clone();
         let accent = theme::accent(&self.config.accent);
-        theme::apply(ctx, accent);
+        theme::apply(&ctx, accent);
 
-        egui::SidePanel::left("nav")
-            .exact_width(238.0)
+        egui::Panel::left("nav")
             .resizable(false)
+            .exact_size(238.0)
             .frame(egui::Frame::new().fill(theme::SIDEBAR).inner_margin(egui::Margin::same(14)))
-            .show(ctx, |ui| {
+            .show(ui, |ui| {
                 ui.add_space(6.0);
                 ui.horizontal(|ui| {
                     Self::paint_logo(ui, accent);
@@ -155,7 +156,7 @@ impl eframe::App for VultureApp {
 
         egui::CentralPanel::default()
             .frame(egui::Frame::new().fill(theme::PAPER).inner_margin(egui::Margin::same(22)))
-            .show(ctx, |ui| {
+            .show(ui, |ui| {
                 egui::ScrollArea::vertical().auto_shrink([false; 2]).show(ui, |ui| {
                     match self.tab {
                         Tab::Dashboard => self.dashboard.show(ui, &mut self.sys, &mut self.config, accent),

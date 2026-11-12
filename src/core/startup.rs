@@ -6,7 +6,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use winreg::enums::*;
-use winreg::{RegKey, HKEY};
+use winreg::RegKey;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StartupLocation {

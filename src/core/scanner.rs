@@ -1,6 +1,5 @@
 //! Junk-file discovery and safe cleaning (Recycle Bin only, never permanent).
 
-use humansize::{format_size, BINARY};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -134,6 +133,7 @@ pub struct ScanItem {
     pub size: u64,
 }
 
+#[derive(Clone)]
 pub struct CategoryScan {
     pub id: CategoryId,
     pub label: String,
@@ -145,9 +145,6 @@ pub struct CategoryScan {
 }
 
 impl CategoryScan {
-    pub fn size_label(&self) -> String {
-        format_size(self.bytes, BINARY)
-    }
 }
 
 pub fn scan_all() -> Vec<CategoryScan> {
@@ -211,18 +208,7 @@ fn scan_one(def: CategoryDef) -> CategoryScan {
 pub struct CleanReport {
     pub files_removed: u64,
     pub bytes_freed: u64,
-    pub folders_recycled: u64,
     pub failures: Vec<String>,
-}
-
-impl CleanReport {
-    /// Move every selected scan's files to the Recycle Bin.
-    pub fn merge(&mut self, other: CleanReport) {
-        self.files_removed += other.files_removed;
-        self.bytes_freed += other.bytes_freed;
-        self.folders_recycled += other.folders_recycled;
-        self.failures.extend(other.failures);
-    }
 }
 
 pub fn clean(scans: &[CategoryScan], selected: &[CategoryId]) -> CleanReport {
@@ -253,18 +239,17 @@ pub fn clean(scans: &[CategoryScan], selected: &[CategoryId]) -> CleanReport {
 
 /// Empty the Windows Recycle Bin. Returns a human-readable error on failure.
 pub fn empty_recycle_bin() -> Result<(), String> {
-    use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::Shell::{SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPROGRESSUI, SHERB_NOSOUND};
     use windows::core::PCWSTR;
 
     let result = unsafe {
         SHEmptyRecycleBinW(
-            Some(HWND::default()),
+            None,
             PCWSTR::null(),
             SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND,
         )
     };
-    match result.ok() {
+    match result {
         Ok(()) => Ok(()),
         Err(e) => Err(format!("Could not empty the Recycle Bin: {e}")),
     }

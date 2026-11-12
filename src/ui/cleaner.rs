@@ -53,10 +53,12 @@ impl CleanerTab {
     }
 
     fn start_clean(&mut self) {
-        let scans = match &self.scans {
-            Some(s) => s.clone_ids_selected(&self.checked),
-            None => Vec::new(),
-        };
+        let snapshot = self.scans.clone().unwrap_or_default();
+        let selected: Vec<CategoryId> = snapshot
+            .iter()
+            .filter(|s| self.checked.contains(&s.id))
+            .map(|s| s.id)
+            .collect();
         let empty_bin = self.empty_bin;
         self.busy = true;
         self.phase = "Cleaning";
@@ -64,27 +66,8 @@ impl CleanerTab {
         let (tx, rx) = mpsc::channel();
         self.rx = Some(rx);
 
-        // Rebuild owned scans inside the worker for simplicity.
-        let snapshot = self
-            .scans
-            .as_ref()
-            .map(|s| {
-                s.iter()
-                    .map(|s| scanner::CategoryScan {
-                        id: s.id,
-                        label: s.label.clone(),
-                        description: s.description.clone(),
-                        needs_admin: s.needs_admin,
-                        items: s.items.clone(),
-                        bytes: s.bytes,
-                        error: s.error.clone(),
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
-
         thread::spawn(move || {
-            let mut report = scanner::clean(&snapshot, &scans);
+            let mut report = scanner::clean(&snapshot, &selected);
             if empty_bin {
                 if let Err(e) = scanner::empty_recycle_bin() {
                     report.failures.push(e);
@@ -301,12 +284,4 @@ impl CleanerTab {
     }
 }
 
-// Helper: turn a selection into owned ids (kept minimal).
-trait SelectedIds {
-    fn clone_ids_selected(&self, checked: &HashSet<CategoryId>) -> Vec<CategoryId>;
-}
-impl SelectedIds for Vec<CategoryScan> {
-    fn clone_ids_selected(&self, checked: &HashSet<CategoryId>) -> Vec<CategoryId> {
-        self.iter().filter(|s| checked.contains(&s.id)).map(|s| s.id).collect()
-    }
-}
+

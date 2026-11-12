@@ -163,15 +163,15 @@ impl SchedulerTab {
             });
         });
 
-        // Open log viewer
-        if let Some((name, content)) = &self.open_log {
-            ui.add_space(10.0);
+        // Open log viewer (take first so the closure can freely use the UI)
+        if let Some((name, content)) = self.open_log.take() {
+            let mut close = false;
             theme::card(ui, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new(name).strong().color(theme::INK));
+                    ui.label(egui::RichText::new(&name).strong().color(theme::INK));
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if ui.small_button("CLOSE").clicked() {
-                            self.open_log = None;
+                            close = true;
                         }
                     });
                 });
@@ -180,6 +180,9 @@ impl SchedulerTab {
                     ui.label(egui::RichText::new(content.as_str()).font(egui::FontId::monospace(11.0)).color(theme::INK));
                 });
             });
+            if !close {
+                self.open_log = Some((name, content));
+            }
         }
     }
 }

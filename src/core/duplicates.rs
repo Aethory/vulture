@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{Arc, mpsc};
+use std::sync::atomic::{AtomicBool, Ordering};
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -45,12 +45,12 @@ impl DuplicateReport {
     }
 }
 
-pub fn scan(root: &Path, cancel: Arc<AtomicBool>, tx: Sender<DupMsg>) {
+pub fn scan(root: &Path, cancel: Arc<AtomicBool>, tx: mpsc::Sender<DupMsg>) {
     let report = scan_inner(root, &cancel, &tx).unwrap_or_else(|_| DuplicateReport::default());
     let _ = tx.send(DupMsg::Done(report));
 }
 
-fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Result<DuplicateReport> {
+fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &mpsc::Sender<DupMsg>) -> Result<DuplicateReport> {
     // Phase 1 — bucket files by size.
     let mut by_size: HashMap<u64, Vec<PathBuf>> = HashMap::new();
     let mut scanned = 0u64;

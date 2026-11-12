@@ -10,7 +10,6 @@ use std::thread;
 use sysinfo::{Disks, System};
 
 pub struct DashboardTab {
-    started: bool,
     working: bool,
     empty_bin: bool,
     rx: Option<Receiver<scanner::CleanReport>>,
@@ -21,7 +20,6 @@ pub struct DashboardTab {
 impl Default for DashboardTab {
     fn default() -> Self {
         Self {
-            started: false,
             working: false,
             empty_bin: false,
             rx: None,
@@ -105,7 +103,7 @@ impl DashboardTab {
         let cpu = sys.global_cpu_usage();
         let mem_used = sys.used_memory();
         let mem_total = sys.total_memory();
-        let uptime = System::uptime();
+        let uptime = System::uptime().unwrap_or(0);
         let (free_gb, total_gb) = disk_free();
 
         ui.horizontal(|ui| {
@@ -245,8 +243,11 @@ impl DashboardTab {
 }
 
 fn disk_free() -> (f64, f64) {
-    let disks = Disks::new_with_refreshed_list();
-    let list = disks.list();
+    let disks = match Disks::new_with_refreshed_list() {
+        Ok(d) => d,
+        Err(_) => return (0.0, 0.0),
+    };
+    let list = &disks[..];
     let system_drive = Path::new("C:\\");
     let disk = list
         .iter()

@@ -1,7 +1,6 @@
 //! Browser cache / cookie / history discovery and cleaning.
 //! Detects Chrome, Edge, Brave, Opera and Firefox, plus their usual profiles.
 
-use humansize::{format_size, BINARY};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -30,9 +29,6 @@ impl BrowserInfo {
         dir_size(&self.cache_dirs)
     }
 
-    pub fn size_label(&self) -> String {
-        format_size(self.cache_size(), BINARY)
-    }
 }
 
 fn dir_size(paths: &[PathBuf]) -> u64 {

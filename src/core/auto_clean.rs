@@ -5,13 +5,8 @@ use crate::core::{browsers, scanner};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub struct AutoCleanReport {
-    pub bytes_freed: u64,
-    pub files_removed: u64,
-    pub failures: Vec<String>,
-}
-
-pub fn run() -> AutoCleanReport {
+/// Returns `true` when the run had zero failures (used for the exit code).
+pub fn run() -> bool {
     // System junk worth auto-clearing (skip Prefetch/Update — too admin-y, too aggressive).
     let wanted = [
         scanner::CategoryId::WindowsTemp,
@@ -36,11 +31,7 @@ pub fn run() -> AutoCleanReport {
 
     write_log(&report);
 
-    AutoCleanReport {
-        bytes_freed: report.bytes_freed,
-        files_removed: report.files_removed,
-        failures: report.failures,
-    }
+    report.failures.is_empty()
 }
 
 fn write_log(report: &scanner::CleanReport) {

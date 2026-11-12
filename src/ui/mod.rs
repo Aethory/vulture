@@ -20,14 +20,6 @@ pub fn fmt_gb(bytes: u64) -> String {
     format!("{:.1} GB", bytes as f64 / 1_073_741_824.0)
 }
 
-pub fn fmt_mb(bytes: u64) -> String {
-    if bytes >= 1_073_741_824 {
-        fmt_gb(bytes)
-    } else {
-        format!("{} MB", bytes / 1_048_576)
-    }
-}
-
 /// "3d 4h", "6h 12m", "42m" — compact uptime for tiles.
 pub fn fmt_uptime(secs: u64) -> String {
     let days = secs / 86_400;

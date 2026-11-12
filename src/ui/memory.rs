@@ -1,6 +1,6 @@
 //! RAM Booster tab — working-set trim + process triage.
 
-use crate::core::memory::{self, MemoryStats, ProcInfo};
+use crate::core::memory::{self, MemoryStats};
 use crate::theme;
 use crate::ui::{fmt_bytes, fmt_gb, fmt_uptime};
 use std::time::Instant;
@@ -207,7 +207,7 @@ pub fn brutal_bar(ui: &mut egui::Ui, fraction: f32, accent: egui::Color32) {
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, 22.0), egui::Sense::hover());
     let painter = ui.painter();
     painter.rect_filled(rect, egui::CornerRadius::same(4), theme::CARD_HI);
-    painter.rect_stroke(rect, egui::CornerRadius::same(4), egui::Stroke::new(2.0, theme::INK));
+    painter.rect_stroke(rect, egui::CornerRadius::same(4), egui::Stroke::new(2.0, theme::INK), egui::StrokeKind::Middle);
     let inner_w = (rect.width() - 4.0) * fraction.clamp(0.0, 1.0);
     if inner_w > 2.0 {
         let fill = egui::Rect::from_min_size(
