@@ -309,3 +309,26 @@ pub fn clean(options: PrivacyOptions) -> PrivacyReport {
 
     report
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dir_size_sums_the_tree() {
+        let root = std::env::temp_dir().join(format!("vulture-test-browsers-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("nested")).unwrap();
+        fs::write(root.join("a.bin"), vec![0u8; 30]).unwrap();
+        fs::write(root.join("nested").join("b.bin"), vec![0u8; 70]).unwrap();
+
+        assert_eq!(dir_size(std::slice::from_ref(&root)), 100);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn dir_size_of_missing_path_is_zero() {
+        let missing = PathBuf::from(r"C:\definitely\not\a\real\path\vulture");
+        assert_eq!(dir_size(&[missing]), 0);
+    }
+}

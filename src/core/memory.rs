@@ -136,3 +136,23 @@ pub fn kill(sys: &mut System, target: &ProcInfo) -> Result<(), String> {
         None => Err("The process already exited.".to_string()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn critical_processes_are_blocked() {
+        assert!(is_blocked("explorer.exe"));
+        assert!(is_blocked("LSASS.EXE"));
+        assert!(is_blocked("System"));
+        assert!(is_blocked("svchost.exe"));
+        assert!(!is_blocked("chrome.exe"));
+        assert!(!is_blocked("spotify.exe"));
+    }
+
+    #[test]
+    fn vulture_itself_cannot_be_killed_by_name() {
+        assert!(is_blocked("vulture.exe"));
+    }
+}
