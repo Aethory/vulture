@@ -34,6 +34,8 @@ pub struct DuplicateReport {
     pub scanned_files: u64,
     pub groups: Vec<DuplicateGroup>,
     pub cancelled: bool,
+    /// Set when the scan itself failed — UI should show this, not "no duplicates".
+    pub error: Option<String>,
 }
 
 impl DuplicateReport {
@@ -46,7 +48,8 @@ impl DuplicateReport {
 }
 
 pub fn scan(root: &Path, cancel: Arc<AtomicBool>, tx: Sender<DupMsg>) {
-    let report = scan_inner(root, &cancel, &tx).unwrap_or_else(|_| DuplicateReport::default());
+    let report = scan_inner(root, &cancel, &tx)
+        .unwrap_or_else(|e| DuplicateReport { error: Some(e.to_string()), ..Default::default() });
     let _ = tx.send(DupMsg::Done(report));
 }
 
@@ -56,7 +59,7 @@ fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Res
     let mut scanned = 0u64;
     for entry in WalkDir::new(root).into_iter().filter_map(|e| e.ok()) {
         if cancel.load(Ordering::Relaxed) {
-            return Ok(DuplicateReport { scanned_files: scanned, groups: Vec::new(), cancelled: true });
+            return Ok(DuplicateReport { scanned_files: scanned, groups: Vec::new(), cancelled: true, error: None });
         }
         let md = match entry.metadata() {
             Ok(m) => m,
@@ -80,12 +83,12 @@ fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Res
 
     for (size, paths) in candidates {
         if cancel.load(Ordering::Relaxed) {
-            return Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: true });
+            return Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: true, error: None });
         }
         let mut by_hash: HashMap<String, Vec<PathBuf>> = HashMap::new();
         for path in paths {
             if cancel.load(Ordering::Relaxed) {
-                return Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: true });
+                return Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: true, error: None });
             }
             let _ = tx.send(DupMsg::Progress(format!(
                 "Hashing {}",
@@ -105,7 +108,7 @@ fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Res
     }
 
     groups.sort_by(|a, b| b.wasted_bytes().cmp(&a.wasted_bytes()));
-    Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: false })
+    Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: false, error: None })
 }
 
 fn hash_file(path: &Path) -> io::Result<String> {

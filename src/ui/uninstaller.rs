@@ -122,7 +122,7 @@ impl UninstallerTab {
                 theme::card(ui, |ui| {
                     ui.horizontal(|ui| {
                         // Monogram avatar
-                        let initial = app.name.chars().next().unwrap_or('?').to_uppercase();
+                        let initial: String = app.name.chars().next().unwrap_or('?').to_uppercase().collect();
                         egui::Frame::new()
                             .fill(accent)
                             .stroke(egui::Stroke::new(2.0, theme::INK))

@@ -80,7 +80,7 @@ impl SchedulerTab {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     let enabled = self.enabled.unwrap_or(false);
                     let mut on = enabled;
-                    if toggle_switch(ui, &mut on, accent, enabled).clicked() {
+                    if toggle_switch(ui, &mut on, accent).clicked() {
                         let result = if on { schedule::enable() } else { schedule::disable() };
                         self.message = Some(match result {
                             Ok(()) => (
@@ -164,7 +164,7 @@ impl SchedulerTab {
         });
 
         // Open log viewer
-        if let Some((name, content)) = &self.open_log {
+        if let Some((name, content)) = self.open_log.clone() {
             ui.add_space(10.0);
             theme::card(ui, |ui| {
                 ui.horizontal(|ui| {

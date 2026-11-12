@@ -11,6 +11,17 @@ pub struct AutoCleanReport {
     pub failures: Vec<String>,
 }
 
+impl AutoCleanReport {
+    /// One-line human summary, printed in headless mode and handy for the log.
+    pub fn summary(&self) -> String {
+        format!(
+            "removed {} files, freed {}",
+            self.files_removed,
+            humansize::format_size(self.bytes_freed, humansize::BINARY)
+        )
+    }
+}
+
 pub fn run() -> AutoCleanReport {
     // System junk worth auto-clearing (skip Prefetch/Update — too admin-y, too aggressive).
     let wanted = [

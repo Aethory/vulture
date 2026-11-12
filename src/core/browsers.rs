@@ -1,7 +1,6 @@
 //! Browser cache / cookie / history discovery and cleaning.
 //! Detects Chrome, Edge, Brave, Opera and Firefox, plus their usual profiles.
 
-use humansize::{format_size, BINARY};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -28,10 +27,6 @@ impl BrowserInfo {
 
     pub fn cache_size(&self) -> u64 {
         dir_size(&self.cache_dirs)
-    }
-
-    pub fn size_label(&self) -> String {
-        format_size(self.cache_size(), BINARY)
     }
 }
 
@@ -190,7 +185,7 @@ fn trash_best_effort(path: &Path) -> Result<(u64, u64), String> {
     if trash::delete(path).is_ok() {
         return Ok((1, size));
     }
-    // Fallback: browser may hold a few locked files — remove what we can.
+    // Fallback: browser may hold a few locked files — trash what we can.
     let mut removed = 0u64;
     let mut freed = 0u64;
     if path.is_dir() {
@@ -204,8 +199,13 @@ fn trash_best_effort(path: &Path) -> Result<(u64, u64), String> {
                 freed += md.len();
             }
         }
-        // Try to remove now-empty dirs (ignores failures for locked leftovers).
-        let _ = fs::remove_dir_all(path);
+        // Sweep the shells of any now-empty directories (children first).
+        // remove_dir() only succeeds on empty dirs, so nothing is force-deleted.
+        for entry in WalkDir::new(path).contents_first(true).into_iter().filter_map(|e| e.ok()) {
+            if entry.file_type().is_dir() {
+                let _ = fs::remove_dir(entry.path());
+            }
+        }
         Ok((removed, freed))
     } else if trash::delete(path).is_ok() {
         Ok((1, size))

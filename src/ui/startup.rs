@@ -64,7 +64,7 @@ impl StartupTab {
                 theme::card(ui, |ui| {
                     ui.horizontal(|ui| {
                         let mut on = entry.enabled;
-                        if toggle_switch(ui, &mut on, accent, entry.enabled).clicked() {
+                        if toggle_switch(ui, &mut on, accent).clicked() {
                             toggle = Some((i, on));
                         }
                         ui.vertical(|ui| {
@@ -121,7 +121,7 @@ fn truncate(s: &str, max: usize) -> String {
 }
 
 /// Chunky ON/OFF pill — very neo-brutalism.
-pub fn toggle_switch(ui: &mut egui::Ui, on: &mut bool, accent: egui::Color32, _current: bool) -> egui::Response {
+pub fn toggle_switch(ui: &mut egui::Ui, on: &mut bool, accent: egui::Color32) -> egui::Response {
     let text = if *on { "ON" } else { "OFF" };
     let fill = if *on { accent } else { theme::CARD_HI };
     let response = ui.add(

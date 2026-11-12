@@ -41,7 +41,7 @@ pub fn collect(sys: &mut System) -> MemoryStats {
         total_bytes: sys.total_memory(),
         used_bytes: sys.used_memory(),
         cpu_percent: sys.global_cpu_usage(),
-        uptime_secs: System::uptime(),
+        uptime_secs: System::uptime().unwrap_or(0),
         processes,
     }
 }
@@ -80,7 +80,7 @@ pub fn boost(sys: &System) -> usize {
         }
         unsafe {
             if let Ok(handle) = OpenProcess(PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION, false, pid_u32) {
-                if EmptyWorkingSet(handle).as_bool() {
+                if EmptyWorkingSet(handle).is_ok() {
                     trimmed += 1;
                 }
                 let _ = CloseHandle(handle);

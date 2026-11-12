@@ -1,6 +1,5 @@
 //! Disk usage analysis: per-folder breakdown and a "largest files" table.
 
-use humansize::{format_size, BINARY};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::{Path, PathBuf};
@@ -20,17 +19,9 @@ pub struct FileEntry {
 }
 
 pub struct DiskReport {
-    pub root: PathBuf,
     pub folders: Vec<FolderSize>,
     pub largest_files: Vec<FileEntry>,
-    pub total_accounted: u64,
     pub cancelled: bool,
-}
-
-impl DiskReport {
-    pub fn formatted(size: u64) -> String {
-        format_size(size, BINARY)
-    }
 }
 
 fn dir_size(path: &Path, cancel: &Arc<AtomicBool>) -> u64 {
@@ -53,7 +44,6 @@ fn dir_size(path: &Path, cancel: &Arc<AtomicBool>) -> u64 {
 pub fn analyze(root: &Path, cancel: Arc<AtomicBool>) -> DiskReport {
     let mut folders = Vec::new();
     let mut heap: BinaryHeap<Reverse<(u64, PathBuf)>> = BinaryHeap::new();
-    let mut total = 0u64;
 
     if let Ok(children) = std::fs::read_dir(root) {
         for child in children.filter_map(|c| c.ok()) {
@@ -66,7 +56,6 @@ pub fn analyze(root: &Path, cancel: Arc<AtomicBool>) -> DiskReport {
             } else {
                 child.metadata().map(|m| m.len()).unwrap_or(0)
             };
-            total += size;
             folders.push(FolderSize { path: child_path, size });
         }
     }
@@ -102,10 +91,8 @@ pub fn analyze(root: &Path, cancel: Arc<AtomicBool>) -> DiskReport {
     largest_files.sort_by(|a, b| b.size.cmp(&a.size));
 
     DiskReport {
-        root: root.to_path_buf(),
         folders,
         largest_files,
-        total_accounted: total,
         cancelled: cancel.load(Ordering::Relaxed),
     }
 }

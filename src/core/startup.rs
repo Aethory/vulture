@@ -6,7 +6,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use winreg::enums::*;
-use winreg::{RegKey, HKEY};
+use winreg::RegKey;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StartupLocation {
@@ -47,6 +47,12 @@ struct DisabledEntry {
     location: StartupLocation,
     /// Original full path for StartupFolder entries (the file was moved away).
     folder_backup: Option<PathBuf>,
+    /// Registry value type name (e.g. "REG_EXPAND_SZ"), if this came from a Run key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    reg_type: Option<String>,
+    /// Raw registry value bytes, preserving the exact original type on restore.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    reg_bytes: Option<Vec<u8>>,
 }
 
 fn backup_path() -> PathBuf {
@@ -200,6 +206,8 @@ fn disable_entry(entry: &StartupEntry) -> Result<(), String> {
                 command: entry.command.clone(),
                 location: entry.location.clone(),
                 folder_backup: Some(dst),
+                reg_type: None,
+                reg_bytes: None,
             });
         }
         _ => {
@@ -218,6 +226,8 @@ fn disable_entry(entry: &StartupEntry) -> Result<(), String> {
                 command: reg_value_to_command(&value),
                 location: entry.location.clone(),
                 folder_backup: None,
+                reg_type: Some(format!("{:?}", value.vtype)),
+                reg_bytes: Some(value.bytes.to_vec()),
             });
         }
     }
@@ -248,13 +258,34 @@ fn enable_entry(entry: &StartupEntry) -> Result<(), String> {
             fs::rename(&src, &dst).map_err(|e| format!("Could not restore the shortcut: {e}"))?;
         }
         _ => {
+            use winreg::RegValue;
             let root = registry_root(&record.location).ok_or("Unknown registry hive.")?;
             let subkey = registry_subkey(&record.location);
             let key = root
                 .open_subkey_with_flags(subkey, KEY_WRITE)
                 .map_err(|e| format!("No access to this registry key — run Vulture as administrator. ({e})"))?;
-            key.set_value(&record.name, &record.command)
-                .map_err(|e| format!("Could not restore the value: {e}"))?;
+            match &record.reg_bytes {
+                // Restore the exact original value type and payload when we have it.
+                Some(bytes) => {
+                    let vtype = match record.reg_type.as_deref() {
+                        Some("REG_EXPAND_SZ") => winreg::enums::REG_EXPAND_SZ,
+                        Some("REG_MULTI_SZ") => winreg::enums::REG_MULTI_SZ,
+                        Some("REG_BINARY") => winreg::enums::REG_BINARY,
+                        Some("REG_DWORD") => winreg::enums::REG_DWORD,
+                        Some("REG_QWORD") => winreg::enums::REG_QWORD,
+                        _ => winreg::enums::REG_SZ,
+                    };
+                    key.set_raw_value(
+                        &record.name,
+                        &RegValue { vtype, bytes: std::borrow::Cow::Borrowed(bytes.as_slice()) },
+                    )
+                    .map_err(|e| format!("Could not restore the value: {e}"))?;
+                }
+                // Legacy backup (pre-v1 backup files): fall back to a plain string.
+                None => key
+                    .set_value(&record.name, &record.command)
+                    .map_err(|e| format!("Could not restore the value: {e}"))?,
+            }
         }
     }
 

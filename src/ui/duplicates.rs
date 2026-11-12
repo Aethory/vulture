@@ -5,7 +5,8 @@ use crate::theme;
 use crate::ui::fmt_bytes;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::{Arc, AtomicBool, mpsc};
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, mpsc};
 use std::thread;
 
 pub struct DuplicatesTab {
@@ -194,6 +195,10 @@ impl DuplicatesTab {
         ui.add_space(12.0);
 
         let Some(report) = &self.report else { return; };
+        if let Some(err) = &report.error {
+            theme::error_banner(ui, &format!("Scan failed: {err}"));
+            return;
+        }
         if report.cancelled {
             theme::info_banner(ui, "Scan cancelled.");
             return;

@@ -11,6 +11,10 @@ fn main() -> eframe::Result<()> {
     // Headless mode used by the Windows scheduled task.
     if std::env::args().any(|a| a == "--auto-clean") {
         let report = core::auto_clean::run();
+        println!("vulture --auto-clean: {}", report.summary());
+        if !report.failures.is_empty() {
+            eprintln!("{} item(s) locked or failed", report.failures.len());
+        }
         std::process::exit(if report.failures.is_empty() { 0 } else { 1 });
     }
 

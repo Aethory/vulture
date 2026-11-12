@@ -80,15 +80,18 @@ pub fn list() -> Vec<InstalledApp> {
     apps
 }
 
-/// Launch the program's uninstaller. Prefers the quiet switch when available.
+/// Launch the program's uninstaller. Prefers the interactive uninstall string
+/// — a one-click quiet uninstall would run with zero prompts, so the silent
+/// switch is only a fallback for entries that ship no interactive command.
 pub fn launch_uninstaller(app: &InstalledApp) -> Result<(), String> {
-    let command = app
-        .quiet_uninstall_string
-        .as_ref()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or(&app.uninstall_string);
+    let interactive = app.uninstall_string.trim();
+    let command = if !interactive.is_empty() {
+        interactive
+    } else {
+        app.quiet_uninstall_string.as_deref().unwrap_or("").trim()
+    };
 
-    if command.trim().is_empty() {
+    if command.is_empty() {
         return Err("This entry has no uninstall command — it may be a system component.".to_string());
     }
 
