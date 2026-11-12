@@ -316,7 +316,8 @@ mod tests {
 
     #[test]
     fn dir_size_sums_the_tree() {
-        let root = std::env::temp_dir().join(format!("vulture-test-browsers-{}", std::process::id()));
+        let root =
+            std::env::temp_dir().join(format!("vulture-test-browsers-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(root.join("nested")).unwrap();
         fs::write(root.join("a.bin"), vec![0u8; 30]).unwrap();

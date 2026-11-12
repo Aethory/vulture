@@ -322,7 +322,10 @@ mod tests {
     fn reg_value_to_command_decodes_utf16le_and_trims_nulls() {
         let mut bytes = utf16le(r"C:\Tools\app.exe --flag");
         bytes.extend_from_slice(&[0, 0]);
-        let value = winreg::RegValue { vtype: winreg::enums::REG_SZ, bytes: std::borrow::Cow::Owned(bytes) };
+        let value = winreg::RegValue {
+            vtype: winreg::enums::REG_SZ,
+            bytes: std::borrow::Cow::Owned(bytes),
+        };
         assert_eq!(reg_value_to_command(&value), r"C:\Tools\app.exe --flag");
     }
 
@@ -332,7 +335,10 @@ mod tests {
         let backup: DisabledBackup = serde_json::from_str(json).unwrap();
         assert_eq!(backup.entries.len(), 1);
         assert_eq!(backup.entries[0].reg_type.as_deref(), Some("REG_EXPAND_SZ"));
-        assert_eq!(backup.entries[0].reg_bytes.as_deref(), Some(&[65u8, 0, 0, 0][..]));
+        assert_eq!(
+            backup.entries[0].reg_bytes.as_deref(),
+            Some(&[65u8, 0, 0, 0][..])
+        );
 
         let encoded = serde_json::to_string(&backup).unwrap();
         let decoded: DisabledBackup = serde_json::from_str(&encoded).unwrap();

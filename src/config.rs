@@ -121,7 +121,11 @@ mod tests {
 
     #[test]
     fn config_roundtrips_through_json() {
-        let config = Config { accent: "teal".to_string(), clean_runs: 7, ..Config::default() };
+        let config = Config {
+            accent: "teal".to_string(),
+            clean_runs: 7,
+            ..Config::default()
+        };
         let json = serde_json::to_string(&config).unwrap();
         let parsed: Config = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed.accent, "teal");

@@ -290,8 +290,14 @@ mod tests {
         fs::write(root.join("a.dmp"), b"1234").unwrap();
         fs::write(root.join("b.txt"), b"1234").unwrap();
         fs::write(root.join("c.DMP"), b"12").unwrap(); // case-insensitive match
-        let def = CategoryDef::new(CategoryId::CrashDumps, "test", "test", false, vec![root.clone()])
-            .extension(".dmp");
+        let def = CategoryDef::new(
+            CategoryId::CrashDumps,
+            "test",
+            "test",
+            false,
+            vec![root.clone()],
+        )
+        .extension(".dmp");
         let scan = scan_one(def);
         assert_eq!(scan.items.len(), 2);
         assert_eq!(scan.bytes, 6);
@@ -303,8 +309,14 @@ mod tests {
         let root = temp_root("prefix-filter");
         fs::write(root.join("thumbcache_32.db"), b"1234").unwrap();
         fs::write(root.join("iconcache_32.db"), b"12").unwrap();
-        let def = CategoryDef::new(CategoryId::Thumbnails, "test", "test", false, vec![root.clone()])
-            .prefix("thumbcache_");
+        let def = CategoryDef::new(
+            CategoryId::Thumbnails,
+            "test",
+            "test",
+            false,
+            vec![root.clone()],
+        )
+        .prefix("thumbcache_");
         let scan = scan_one(def);
         assert_eq!(scan.items.len(), 1);
         assert_eq!(scan.bytes, 4);

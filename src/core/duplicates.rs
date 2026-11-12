@@ -212,8 +212,14 @@ mod tests {
         let report = DuplicateReport {
             scanned_files: 10,
             groups: vec![
-                DuplicateGroup { size: 10, paths: vec![PathBuf::from("a"), PathBuf::from("b")] },
-                DuplicateGroup { size: 50, paths: vec![PathBuf::from("c"), PathBuf::from("d"), PathBuf::from("e")] },
+                DuplicateGroup {
+                    size: 10,
+                    paths: vec![PathBuf::from("a"), PathBuf::from("b")],
+                },
+                DuplicateGroup {
+                    size: 50,
+                    paths: vec![PathBuf::from("c"), PathBuf::from("d"), PathBuf::from("e")],
+                },
             ],
             cancelled: false,
             error: None,
@@ -251,7 +257,8 @@ mod tests {
 
     #[test]
     fn scan_honours_cancel_flag() {
-        let root = std::env::temp_dir().join(format!("vulture-test-dupcancel-{}", std::process::id()));
+        let root =
+            std::env::temp_dir().join(format!("vulture-test-dupcancel-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).unwrap();
         for i in 0..10 {
