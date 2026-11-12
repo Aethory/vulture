@@ -21,9 +21,21 @@ pub struct InstalledApp {
 
 fn hives() -> [(&'static str, &'static str, HKEY); 3] {
     [
-        (r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", "HKLM (64-bit)", HKEY_LOCAL_MACHINE),
-        (r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall", "HKLM (32-bit)", HKEY_LOCAL_MACHINE),
-        (r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", "HKCU", HKEY_CURRENT_USER),
+        (
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKLM (64-bit)",
+            HKEY_LOCAL_MACHINE,
+        ),
+        (
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKLM (32-bit)",
+            HKEY_LOCAL_MACHINE,
+        ),
+        (
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKCU",
+            HKEY_CURRENT_USER,
+        ),
     ]
 }
 
@@ -42,7 +54,11 @@ pub fn list() -> Vec<InstalledApp> {
                 Err(_) => continue,
             };
             // Skip system components and things that shouldn't be in the list.
-            if sub.get_value::<u32, _>("SystemComponent").map(|v| v == 1).unwrap_or(false) {
+            if sub
+                .get_value::<u32, _>("SystemComponent")
+                .map(|v| v == 1)
+                .unwrap_or(false)
+            {
                 continue;
             }
             if sub.get_value::<String, _>("ParentKeyName").is_ok() {
@@ -52,7 +68,9 @@ pub fn list() -> Vec<InstalledApp> {
                 Ok(n) if !n.trim().is_empty() => n,
                 _ => continue,
             };
-            if display_name.starts_with("Update for ") || display_name.starts_with("Security Update") {
+            if display_name.starts_with("Update for ")
+                || display_name.starts_with("Security Update")
+            {
                 continue;
             }
 
@@ -65,18 +83,24 @@ pub fn list() -> Vec<InstalledApp> {
 
             apps.push(InstalledApp {
                 name: display_name,
-                version: sub.get_value::<String, _>("DisplayVersion").unwrap_or_default(),
-                publisher: sub.get_value::<String, _>("Publisher").unwrap_or_else(|_| "Unknown publisher".to_string()),
+                version: sub
+                    .get_value::<String, _>("DisplayVersion")
+                    .unwrap_or_default(),
+                publisher: sub
+                    .get_value::<String, _>("Publisher")
+                    .unwrap_or_else(|_| "Unknown publisher".to_string()),
                 install_location,
                 estimated_size: estimated_kb.saturating_mul(1024),
-                uninstall_string: sub.get_value::<String, _>("UninstallString").unwrap_or_default(),
+                uninstall_string: sub
+                    .get_value::<String, _>("UninstallString")
+                    .unwrap_or_default(),
                 quiet_uninstall_string: sub.get_value::<String, _>("QuietUninstallString").ok(),
                 source,
             });
         }
     }
 
-    apps.sort_by(|a, b| b.estimated_size.cmp(&a.estimated_size));
+    apps.sort_by_key(|a| std::cmp::Reverse(a.estimated_size));
     apps
 }
 
@@ -92,7 +116,9 @@ pub fn launch_uninstaller(app: &InstalledApp) -> Result<(), String> {
     };
 
     if command.is_empty() {
-        return Err("This entry has no uninstall command — it may be a system component.".to_string());
+        return Err(
+            "This entry has no uninstall command — it may be a system component.".to_string(),
+        );
     }
 
     std::process::Command::new("cmd")

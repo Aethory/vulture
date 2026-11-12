@@ -14,12 +14,14 @@ pub fn is_enabled() -> bool {
 }
 
 pub fn enable() -> Result<(), String> {
-    let exe = std::env::current_exe()
-        .map_err(|e| format!("Could not resolve Vulture's path: {e}"))?;
+    let exe =
+        std::env::current_exe().map_err(|e| format!("Could not resolve Vulture's path: {e}"))?;
     let task_run = format!("\"{}\" --auto-clean", exe.display());
 
     let output = Command::new("schtasks")
-        .args(["/Create", "/TN", TASK_NAME, "/TR", &task_run, "/SC", "DAILY", "/ST", RUN_TIME, "/F"])
+        .args([
+            "/Create", "/TN", TASK_NAME, "/TR", &task_run, "/SC", "DAILY", "/ST", RUN_TIME, "/F",
+        ])
         .output()
         .map_err(|e| format!("Could not run schtasks: {e}"))?;
 

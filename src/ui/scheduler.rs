@@ -5,22 +5,12 @@ use crate::theme;
 use crate::ui::startup::toggle_switch;
 use std::path::PathBuf;
 
+#[derive(Default)]
 pub struct SchedulerTab {
     enabled: Option<bool>,
     message: Option<(bool, String)>,
     logs: Vec<PathBuf>,
     open_log: Option<(String, String)>,
-}
-
-impl Default for SchedulerTab {
-    fn default() -> Self {
-        Self {
-            enabled: None,
-            message: None,
-            logs: Vec::new(),
-            open_log: None,
-        }
-    }
 }
 
 impl SchedulerTab {
@@ -47,7 +37,10 @@ impl SchedulerTab {
         }
 
         theme::heading(ui, "Auto Clean");
-        theme::subtitle(ui, "Vulture, working while you sleep. A daily 02:30 sweep — no taps required.");
+        theme::subtitle(
+            ui,
+            "Vulture, working while you sleep. A daily 02:30 sweep — no taps required.",
+        );
         ui.add_space(14.0);
 
         if let Some((ok, msg)) = &self.message {
@@ -72,23 +65,31 @@ impl SchedulerTab {
                             .color(theme::INK),
                     );
                     ui.label(
-                        egui::RichText::new("Windows Task Scheduler · task name “Vulture Auto Clean”")
-                            .small()
-                            .color(theme::MUTED),
+                        egui::RichText::new(
+                            "Windows Task Scheduler · task name “Vulture Auto Clean”",
+                        )
+                        .small()
+                        .color(theme::MUTED),
                     );
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     let enabled = self.enabled.unwrap_or(false);
                     let mut on = enabled;
                     if toggle_switch(ui, &mut on, accent).clicked() {
-                        let result = if on { schedule::enable() } else { schedule::disable() };
+                        let result = if on {
+                            schedule::enable()
+                        } else {
+                            schedule::disable()
+                        };
                         self.message = Some(match result {
                             Ok(()) => (
                                 true,
                                 if on {
-                                    "Task registered — Vulture will sweep daily at 02:30.".to_string()
+                                    "Task registered — Vulture will sweep daily at 02:30."
+                                        .to_string()
                                 } else {
-                                    "Task removed. Vulture will only clean when you ask.".to_string()
+                                    "Task removed. Vulture will only clean when you ask."
+                                        .to_string()
                                 },
                             ),
                             Err(e) => (false, e),
@@ -147,15 +148,27 @@ impl SchedulerTab {
                 ui.add_space(6.0);
                 if self.logs.is_empty() {
                     ui.label(
-                        egui::RichText::new("No runs yet — the first nightly sweep will log itself here.")
-                            .small()
-                            .color(theme::MUTED),
+                        egui::RichText::new(
+                            "No runs yet — the first nightly sweep will log itself here.",
+                        )
+                        .small()
+                        .color(theme::MUTED),
                     );
                 } else {
                     for log in &self.logs.clone() {
-                        let name = log.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                        if ui.selectable_label(false, egui::RichText::new(&name).font(egui::FontId::monospace(10.5))).clicked() {
-                            let content = std::fs::read_to_string(log).unwrap_or_else(|e| format!("Could not read log: {e}"));
+                        let name = log
+                            .file_name()
+                            .map(|n| n.to_string_lossy().into_owned())
+                            .unwrap_or_default();
+                        if ui
+                            .selectable_label(
+                                false,
+                                egui::RichText::new(&name).font(egui::FontId::monospace(10.5)),
+                            )
+                            .clicked()
+                        {
+                            let content = std::fs::read_to_string(log)
+                                .unwrap_or_else(|e| format!("Could not read log: {e}"));
                             self.open_log = Some((name.clone(), content));
                         }
                     }
@@ -176,9 +189,15 @@ impl SchedulerTab {
                     });
                 });
                 ui.add_space(6.0);
-                egui::ScrollArea::vertical().max_height(160.0).show(ui, |ui| {
-                    ui.label(egui::RichText::new(content.as_str()).font(egui::FontId::monospace(11.0)).color(theme::INK));
-                });
+                egui::ScrollArea::vertical()
+                    .max_height(160.0)
+                    .show(ui, |ui| {
+                        ui.label(
+                            egui::RichText::new(content.as_str())
+                                .font(egui::FontId::monospace(11.0))
+                                .color(theme::INK),
+                        );
+                    });
             });
         }
     }

@@ -3,20 +3,11 @@
 use crate::core::startup::{self, StartupEntry, StartupLocation};
 use crate::theme;
 
+#[derive(Default)]
 pub struct StartupTab {
     entries: Option<Vec<StartupEntry>>,
     error: Option<String>,
     note: Option<String>,
-}
-
-impl Default for StartupTab {
-    fn default() -> Self {
-        Self {
-            entries: None,
-            error: None,
-            note: None,
-        }
-    }
 }
 
 impl StartupTab {
@@ -126,7 +117,10 @@ pub fn toggle_switch(ui: &mut egui::Ui, on: &mut bool, accent: egui::Color32) ->
     let fill = if *on { accent } else { theme::CARD_HI };
     let response = ui.add(
         egui::Button::new(
-            egui::RichText::new(text).font(egui::FontId::proportional(12.0)).strong().color(theme::INK),
+            egui::RichText::new(text)
+                .font(egui::FontId::proportional(12.0))
+                .strong()
+                .color(theme::INK),
         )
         .fill(fill)
         .stroke(egui::Stroke::new(2.0, theme::INK))

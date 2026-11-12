@@ -4,22 +4,12 @@ use crate::core::uninstall::{self, InstalledApp};
 use crate::theme;
 use crate::ui::fmt_bytes;
 
+#[derive(Default)]
 pub struct UninstallerTab {
     apps: Option<Vec<InstalledApp>>,
     query: String,
     confirm: Option<usize>,
     message: Option<(bool, String)>,
-}
-
-impl Default for UninstallerTab {
-    fn default() -> Self {
-        Self {
-            apps: None,
-            query: String::new(),
-            confirm: None,
-            message: None,
-        }
-    }
 }
 
 impl UninstallerTab {
@@ -43,7 +33,12 @@ impl UninstallerTab {
 
         // Search + actions row
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new("SEARCH").small().strong().color(theme::MUTED));
+            ui.label(
+                egui::RichText::new("SEARCH")
+                    .small()
+                    .strong()
+                    .color(theme::MUTED),
+            );
             ui.add_sized(
                 egui::vec2(320.0, 30.0),
                 egui::TextEdit::singleline(&mut self.query)
@@ -122,14 +117,25 @@ impl UninstallerTab {
                 theme::card(ui, |ui| {
                     ui.horizontal(|ui| {
                         // Monogram avatar
-                        let initial: String = app.name.chars().next().unwrap_or('?').to_uppercase().collect();
+                        let initial: String = app
+                            .name
+                            .chars()
+                            .next()
+                            .unwrap_or('?')
+                            .to_uppercase()
+                            .collect();
                         egui::Frame::new()
                             .fill(accent)
                             .stroke(egui::Stroke::new(2.0, theme::INK))
                             .corner_radius(egui::CornerRadius::same(6))
                             .inner_margin(egui::Margin::same(10))
                             .show(ui, |ui| {
-                                ui.label(egui::RichText::new(initial).font(egui::FontId::proportional(18.0)).strong().color(theme::INK));
+                                ui.label(
+                                    egui::RichText::new(initial)
+                                        .font(egui::FontId::proportional(18.0))
+                                        .strong()
+                                        .color(theme::INK),
+                                );
                             });
                         ui.vertical(|ui| {
                             ui.label(egui::RichText::new(&app.name).strong().color(theme::INK));
@@ -137,7 +143,11 @@ impl UninstallerTab {
                                 egui::RichText::new(format!(
                                     "{}{}",
                                     app.publisher,
-                                    if app.version.is_empty() { String::new() } else { format!(" · v{}", app.version) }
+                                    if app.version.is_empty() {
+                                        String::new()
+                                    } else {
+                                        format!(" · v{}", app.version)
+                                    }
                                 ))
                                 .small()
                                 .color(theme::MUTED),

@@ -54,7 +54,11 @@ impl PrivacyTab {
     fn start_clean(&mut self) {
         self.cleaning = true;
         self.report = None;
-        let options = PrivacyOptions { cache: self.cache, cookies: self.cookies, history: self.history };
+        let options = PrivacyOptions {
+            cache: self.cache,
+            cookies: self.cookies,
+            history: self.history,
+        };
         let (tx, rx) = mpsc::channel();
         self.rx = Some(rx);
         thread::spawn(move || {
@@ -98,7 +102,10 @@ impl PrivacyTab {
         }
 
         theme::heading(ui, "Privacy");
-        theme::subtitle(ui, "Caches regrow in days. Cookies and history are optional — read before ticking.");
+        theme::subtitle(
+            ui,
+            "Caches regrow in days. Cookies and history are optional — read before ticking.",
+        );
         ui.add_space(14.0);
 
         if let Some(report) = &self.report {
@@ -112,13 +119,16 @@ impl PrivacyTab {
             );
             if !report.failures.is_empty() {
                 ui.add_space(6.0);
-                egui::CollapsingHeader::new(format!("{} locked — close the browser first", report.failures.len()))
-                    .id_salt("privacy-failures")
-                    .show(ui, |ui| {
-                        for f in &report.failures {
-                            ui.label(egui::RichText::new(f).small().color(theme::MUTED));
-                        }
-                    });
+                egui::CollapsingHeader::new(format!(
+                    "{} locked — close the browser first",
+                    report.failures.len()
+                ))
+                .id_salt("privacy-failures")
+                .show(ui, |ui| {
+                    for f in &report.failures {
+                        ui.label(egui::RichText::new(f).small().color(theme::MUTED));
+                    }
+                });
             }
             ui.add_space(10.0);
         }
@@ -130,18 +140,29 @@ impl PrivacyTab {
             theme::card(ui, |ui| {
                 ui.horizontal(|ui| {
                     egui::Frame::new()
-                        .fill(if detected { theme::GREEN } else { theme::CARD_HI })
+                        .fill(if detected {
+                            theme::GREEN
+                        } else {
+                            theme::CARD_HI
+                        })
                         .stroke(egui::Stroke::new(1.5, theme::INK))
                         .corner_radius(egui::CornerRadius::same(20))
                         .inner_margin(egui::Margin::same(9))
                         .show(ui, |ui| {
-                            ui.label(egui::RichText::new(if detected { "●" } else { "○" }).color(theme::INK));
+                            ui.label(
+                                egui::RichText::new(if detected { "●" } else { "○" })
+                                    .color(theme::INK),
+                            );
                         });
                     ui.vertical(|ui| {
                         ui.label(egui::RichText::new(browser.name).strong().color(theme::INK));
                         ui.label(
                             egui::RichText::new(if detected {
-                                format!("{} profile(s) · {}", browser.profiles.len(), browser.data_root.display())
+                                format!(
+                                    "{} profile(s) · {}",
+                                    browser.profiles.len(),
+                                    browser.data_root.display()
+                                )
                             } else {
                                 "Not installed".to_string()
                             })
@@ -176,15 +197,20 @@ impl PrivacyTab {
             ui.add_space(8.0);
             ui.checkbox(
                 &mut self.cache,
-                egui::RichText::new("Browser caches — code, GPU shaders, site data (recommended)").color(theme::INK),
+                egui::RichText::new("Browser caches — code, GPU shaders, site data (recommended)")
+                    .color(theme::INK),
             );
             ui.checkbox(
                 &mut self.cookies,
-                egui::RichText::new("Cookies — you will be signed out of every website").color(theme::RED),
+                egui::RichText::new("Cookies — you will be signed out of every website")
+                    .color(theme::RED),
             );
             ui.checkbox(
                 &mut self.history,
-                egui::RichText::new("History — empties your browsing history and address bar suggestions").color(theme::RED),
+                egui::RichText::new(
+                    "History — empties your browsing history and address bar suggestions",
+                )
+                .color(theme::RED),
             );
             ui.add_space(12.0);
 
@@ -194,7 +220,9 @@ impl PrivacyTab {
                     ui.label(egui::RichText::new("Wiping…").strong().color(theme::INK));
                 });
             } else if !(self.cache || self.cookies || self.history) {
-                ui.label(egui::RichText::new("Select at least one thing to wipe.").color(theme::MUTED));
+                ui.label(
+                    egui::RichText::new("Select at least one thing to wipe.").color(theme::MUTED),
+                );
             } else if theme::primary_button(ui, "Clean selected data", accent).clicked() {
                 self.start_clean();
             }

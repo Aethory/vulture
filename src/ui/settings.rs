@@ -1,17 +1,9 @@
 //! Settings tab — appearance, data folder, stats, about.
 
+#[derive(Default)]
 pub struct SettingsTab {
     confirm_reset: bool,
     note: Option<String>,
-}
-
-impl Default for SettingsTab {
-    fn default() -> Self {
-        Self {
-            confirm_reset: false,
-            note: None,
-        }
-    }
 }
 
 const ACCENTS: &[(&str, &str)] = &[("amber", "Amber"), ("teal", "Teal"), ("violet", "Violet")];
@@ -21,7 +13,10 @@ impl SettingsTab {
         use crate::theme;
 
         theme::heading(ui, "Settings");
-        theme::subtitle(ui, "Make Vulture yours. Nothing here phones home — there is no home.");
+        theme::subtitle(
+            ui,
+            "Make Vulture yours. Nothing here phones home — there is no home.",
+        );
         ui.add_space(14.0);
 
         ui.columns(2, |cols| {

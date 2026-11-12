@@ -37,7 +37,15 @@ impl CategoryDef {
         needs_admin: bool,
         paths: Vec<PathBuf>,
     ) -> Self {
-        Self { id, label, description, needs_admin, paths, file_prefix: None, extension: None }
+        Self {
+            id,
+            label,
+            description,
+            needs_admin,
+            paths,
+            file_prefix: None,
+            extension: None,
+        }
     }
     fn prefix(mut self, p: &'static str) -> Self {
         self.file_prefix = Some(p);
@@ -67,7 +75,9 @@ pub fn categories() -> Vec<CategoryDef> {
             "Windows Update cache",
             "Downloaded update payloads that are no longer needed.",
             true,
-            vec![PathBuf::from(format!(r"{windir}\SoftwareDistribution\Download"))],
+            vec![PathBuf::from(format!(
+                r"{windir}\SoftwareDistribution\Download"
+            ))],
         ),
         CategoryDef::new(
             CategoryId::Prefetch,
@@ -236,9 +246,11 @@ pub fn clean(scans: &[CategoryScan], selected: &[CategoryId]) -> CleanReport {
 
 /// Empty the Windows Recycle Bin. Returns a human-readable error on failure.
 pub fn empty_recycle_bin() -> Result<(), String> {
-    use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::Shell::{SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPROGRESSUI, SHERB_NOSOUND};
     use windows::core::PCWSTR;
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::Shell::{
+        SHEmptyRecycleBinW, SHERB_NOCONFIRMATION, SHERB_NOPROGRESSUI, SHERB_NOSOUND,
+    };
 
     let result = unsafe {
         SHEmptyRecycleBinW(

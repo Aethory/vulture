@@ -108,7 +108,10 @@ impl CleanerTab {
         }
 
         theme::heading(ui, "Smart Clean");
-        theme::subtitle(ui, "Hand-pick the categories — everything is recoverable from the Recycle Bin.");
+        theme::subtitle(
+            ui,
+            "Hand-pick the categories — everything is recoverable from the Recycle Bin.",
+        );
         ui.add_space(14.0);
 
         if let Some(report) = &self.report {

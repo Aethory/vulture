@@ -31,7 +31,8 @@ impl MemoryTab {
         if self.sys_side.elapsed() >= std::time::Duration::from_secs(2) {
             self.stats = Some(memory::collect(sys));
             self.sys_side = Instant::now();
-            ui.ctx().request_repaint_after(std::time::Duration::from_secs(2));
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_secs(2));
         }
 
         // Clear a stale confirm after 3 seconds.
@@ -42,7 +43,10 @@ impl MemoryTab {
         }
 
         theme::heading(ui, "RAM Booster");
-        theme::subtitle(ui, "Flush what's cached for speed — ending tasks is on you.");
+        theme::subtitle(
+            ui,
+            "Flush what's cached for speed — ending tasks is on you.",
+        );
         ui.add_space(14.0);
 
         let stats = match &self.stats {
@@ -207,7 +211,12 @@ pub fn brutal_bar(ui: &mut egui::Ui, fraction: f32, accent: egui::Color32) {
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, 22.0), egui::Sense::hover());
     let painter = ui.painter();
     painter.rect_filled(rect, egui::CornerRadius::same(4), theme::CARD_HI);
-    painter.rect_stroke(rect, egui::CornerRadius::same(4), egui::Stroke::new(2.0, theme::INK), egui::StrokeKind::Inside);
+    painter.rect_stroke(
+        rect,
+        egui::CornerRadius::same(4),
+        egui::Stroke::new(2.0, theme::INK),
+        egui::StrokeKind::Inside,
+    );
     let inner_w = (rect.width() - 4.0) * fraction.clamp(0.0, 1.0);
     if inner_w > 2.0 {
         let fill = egui::Rect::from_min_size(

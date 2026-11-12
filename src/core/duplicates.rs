@@ -1,12 +1,16 @@
 //! Content-based duplicate detection: bucket by size first, then hash with BLAKE3.
 
 use anyhow::Result;
+use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -43,23 +47,37 @@ impl DuplicateReport {
         self.groups.iter().map(|g| g.wasted_bytes()).sum()
     }
     pub fn extra_copies(&self) -> u64 {
-        self.groups.iter().map(|g| g.paths.len().saturating_sub(1) as u64).sum()
+        self.groups
+            .iter()
+            .map(|g| g.paths.len().saturating_sub(1) as u64)
+            .sum()
     }
 }
 
 pub fn scan(root: &Path, cancel: Arc<AtomicBool>, tx: Sender<DupMsg>) {
-    let report = scan_inner(root, &cancel, &tx)
-        .unwrap_or_else(|e| DuplicateReport { error: Some(e.to_string()), ..Default::default() });
+    let report = scan_inner(root, &cancel, &tx).unwrap_or_else(|e| DuplicateReport {
+        error: Some(e.to_string()),
+        ..Default::default()
+    });
     let _ = tx.send(DupMsg::Done(report));
 }
 
-fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Result<DuplicateReport> {
+fn scan_inner(
+    root: &Path,
+    cancel: &Arc<AtomicBool>,
+    tx: &Sender<DupMsg>,
+) -> Result<DuplicateReport> {
     // Phase 1 — bucket files by size.
     let mut by_size: HashMap<u64, Vec<PathBuf>> = HashMap::new();
     let mut scanned = 0u64;
     for entry in WalkDir::new(root).into_iter().filter_map(|e| e.ok()) {
         if cancel.load(Ordering::Relaxed) {
-            return Ok(DuplicateReport { scanned_files: scanned, groups: Vec::new(), cancelled: true, error: None });
+            return Ok(DuplicateReport {
+                scanned_files: scanned,
+                groups: Vec::new(),
+                cancelled: true,
+                error: None,
+            });
         }
         let md = match entry.metadata() {
             Ok(m) => m,
@@ -69,10 +87,13 @@ fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Res
             continue;
         }
         scanned += 1;
-        if scanned % 500 == 0 {
+        if scanned.is_multiple_of(500) {
             let _ = tx.send(DupMsg::Progress(format!("Indexed {scanned} files…")));
         }
-        by_size.entry(md.len()).or_default().push(entry.path().to_path_buf());
+        by_size
+            .entry(md.len())
+            .or_default()
+            .push(entry.path().to_path_buf());
     }
 
     let mut groups: Vec<DuplicateGroup> = Vec::new();
@@ -83,16 +104,28 @@ fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Res
 
     for (size, paths) in candidates {
         if cancel.load(Ordering::Relaxed) {
-            return Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: true, error: None });
+            return Ok(DuplicateReport {
+                scanned_files: scanned,
+                groups,
+                cancelled: true,
+                error: None,
+            });
         }
         let mut by_hash: HashMap<String, Vec<PathBuf>> = HashMap::new();
         for path in paths {
             if cancel.load(Ordering::Relaxed) {
-                return Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: true, error: None });
+                return Ok(DuplicateReport {
+                    scanned_files: scanned,
+                    groups,
+                    cancelled: true,
+                    error: None,
+                });
             }
             let _ = tx.send(DupMsg::Progress(format!(
                 "Hashing {}",
-                path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+                path.file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default()
             )));
             match hash_file(&path) {
                 Ok(hash) => by_hash.entry(hash).or_default().push(path),
@@ -102,13 +135,21 @@ fn scan_inner(root: &Path, cancel: &Arc<AtomicBool>, tx: &Sender<DupMsg>) -> Res
         for (_, mut dup_paths) in by_hash {
             if dup_paths.len() >= 2 {
                 dup_paths.sort_by_key(|p| p.metadata().and_then(|m| m.modified()).ok());
-                groups.push(DuplicateGroup { size, paths: dup_paths });
+                groups.push(DuplicateGroup {
+                    size,
+                    paths: dup_paths,
+                });
             }
         }
     }
 
-    groups.sort_by(|a, b| b.wasted_bytes().cmp(&a.wasted_bytes()));
-    Ok(DuplicateReport { scanned_files: scanned, groups, cancelled: false, error: None })
+    groups.sort_by_key(|g| Reverse(g.wasted_bytes()));
+    Ok(DuplicateReport {
+        scanned_files: scanned,
+        groups,
+        cancelled: false,
+        error: None,
+    })
 }
 
 fn hash_file(path: &Path) -> io::Result<String> {
@@ -144,7 +185,9 @@ pub fn delete(paths: &[PathBuf]) -> DupDeleteReport {
             }
             Err(e) => report.failures.push(format!(
                 "{} — {e}",
-                path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()
+                path.file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default()
             )),
         }
     }

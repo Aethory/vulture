@@ -2,10 +2,10 @@
 
 use crate::core::disk::{self, DiskReport};
 use crate::theme;
-use crate::ui::memory::brutal_bar;
 use crate::ui::fmt_bytes;
+use crate::ui::memory::brutal_bar;
 use std::path::PathBuf;
-use std::sync::{Arc, atomic::AtomicBool, mpsc};
+use std::sync::{atomic::AtomicBool, mpsc, Arc};
 use std::thread;
 
 pub struct DiskTab {
@@ -57,13 +57,21 @@ impl DiskTab {
         }
 
         theme::heading(ui, "Disk Analyzer");
-        theme::subtitle(ui, "Every gigabyte, accounted for. Pick a folder — results are instant-ish.");
+        theme::subtitle(
+            ui,
+            "Every gigabyte, accounted for. Pick a folder — results are instant-ish.",
+        );
         ui.add_space(14.0);
 
         // Controls
         theme::card(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("TARGET").small().strong().color(theme::MUTED));
+                ui.label(
+                    egui::RichText::new("TARGET")
+                        .small()
+                        .strong()
+                        .color(theme::MUTED),
+                );
                 ui.label(
                     egui::RichText::new(self.root.display().to_string())
                         .font(egui::FontId::monospace(13.0))
@@ -74,7 +82,10 @@ impl DiskTab {
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 if theme::ghost_button(ui, "Change folder…").clicked() && !self.analyzing {
-                    if let Some(dir) = rfd::FileDialog::new().set_directory(&self.root).pick_folder() {
+                    if let Some(dir) = rfd::FileDialog::new()
+                        .set_directory(&self.root)
+                        .pick_folder()
+                    {
                         self.root = dir;
                         self.report = None;
                     }
@@ -111,79 +122,103 @@ impl DiskTab {
             theme::card(&mut cols[0], |ui| {
                 theme::section_label(ui, "Folder breakdown");
                 ui.add_space(8.0);
-                let max = report.folders.iter().map(|f| f.size).max().unwrap_or(1).max(1);
-                egui::ScrollArea::vertical().max_height(ui.available_height()).show(ui, |ui| {
-                    for folder in report.folders.iter().take(14) {
-                        let name = folder
-                            .path
-                            .file_name()
-                            .map(|n| n.to_string_lossy().into_owned())
-                            .unwrap_or_else(|| folder.path.display().to_string());
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(truncate(&name, 30)).strong().color(theme::INK));
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let max = report
+                    .folders
+                    .iter()
+                    .map(|f| f.size)
+                    .max()
+                    .unwrap_or(1)
+                    .max(1);
+                egui::ScrollArea::vertical()
+                    .max_height(ui.available_height())
+                    .show(ui, |ui| {
+                        for folder in report.folders.iter().take(14) {
+                            let name = folder
+                                .path
+                                .file_name()
+                                .map(|n| n.to_string_lossy().into_owned())
+                                .unwrap_or_else(|| folder.path.display().to_string());
+                            ui.horizontal(|ui| {
                                 ui.label(
-                                    egui::RichText::new(fmt_bytes(folder.size))
-                                        .font(egui::FontId::monospace(12.0))
+                                    egui::RichText::new(truncate(&name, 30))
                                         .strong()
                                         .color(theme::INK),
                                 );
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::Center),
+                                    |ui| {
+                                        ui.label(
+                                            egui::RichText::new(fmt_bytes(folder.size))
+                                                .font(egui::FontId::monospace(12.0))
+                                                .strong()
+                                                .color(theme::INK),
+                                        );
+                                    },
+                                );
                             });
-                        });
-                        brutal_bar(ui, folder.size as f32 / max as f32, accent);
-                        ui.add_space(6.0);
-                    }
-                    if report.folders.len() > 14 {
-                        ui.label(
-                            egui::RichText::new(format!("+ {} more folders…", report.folders.len() - 14))
+                            brutal_bar(ui, folder.size as f32 / max as f32, accent);
+                            ui.add_space(6.0);
+                        }
+                        if report.folders.len() > 14 {
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "+ {} more folders…",
+                                    report.folders.len() - 14
+                                ))
                                 .small()
                                 .color(theme::MUTED),
-                        );
-                    }
-                });
+                            );
+                        }
+                    });
             });
 
             // Right: largest files
             theme::card(&mut cols[1], |ui| {
                 theme::section_label(ui, "Your 40 biggest files");
                 ui.add_space(8.0);
-                egui::ScrollArea::vertical().max_height(ui.available_height()).show(ui, |ui| {
-                    egui::Grid::new("largest-files").num_columns(3).spacing([10.0, 5.0]).striped(true).show(ui, |ui| {
-                        for file in report.largest_files.iter().take(18) {
-                            let name = file
-                                .path
-                                .file_name()
-                                .map(|n| n.to_string_lossy().into_owned())
-                                .unwrap_or_default();
-                            ui.vertical(|ui| {
-                                ui.label(
-                                    egui::RichText::new(truncate(&name, 34))
-                                        .font(egui::FontId::monospace(11.0))
-                                        .strong()
-                                        .color(theme::INK),
-                                );
-                                ui.label(
-                                    egui::RichText::new(file.path.display().to_string())
-                                        .font(egui::FontId::proportional(9.0))
-                                        .color(theme::MUTED),
-                                );
+                egui::ScrollArea::vertical()
+                    .max_height(ui.available_height())
+                    .show(ui, |ui| {
+                        egui::Grid::new("largest-files")
+                            .num_columns(3)
+                            .spacing([10.0, 5.0])
+                            .striped(true)
+                            .show(ui, |ui| {
+                                for file in report.largest_files.iter().take(18) {
+                                    let name = file
+                                        .path
+                                        .file_name()
+                                        .map(|n| n.to_string_lossy().into_owned())
+                                        .unwrap_or_default();
+                                    ui.vertical(|ui| {
+                                        ui.label(
+                                            egui::RichText::new(truncate(&name, 34))
+                                                .font(egui::FontId::monospace(11.0))
+                                                .strong()
+                                                .color(theme::INK),
+                                        );
+                                        ui.label(
+                                            egui::RichText::new(file.path.display().to_string())
+                                                .font(egui::FontId::proportional(9.0))
+                                                .color(theme::MUTED),
+                                        );
+                                    });
+                                    ui.label(
+                                        egui::RichText::new(fmt_bytes(file.size))
+                                            .font(egui::FontId::monospace(11.0))
+                                            .strong()
+                                            .color(theme::INK),
+                                    );
+                                    if theme::ghost_button(ui, "Open").clicked() {
+                                        let _ = std::process::Command::new("explorer")
+                                            .arg("/select,")
+                                            .arg(&file.path)
+                                            .spawn();
+                                    }
+                                    ui.end_row();
+                                }
                             });
-                            ui.label(
-                                egui::RichText::new(fmt_bytes(file.size))
-                                    .font(egui::FontId::monospace(11.0))
-                                    .strong()
-                                    .color(theme::INK),
-                            );
-                            if theme::ghost_button(ui, "Open").clicked() {
-                                let _ = std::process::Command::new("explorer")
-                                    .arg("/select,")
-                                    .arg(&file.path)
-                                    .spawn();
-                            }
-                            ui.end_row();
-                        }
                     });
-                });
             });
         });
     }

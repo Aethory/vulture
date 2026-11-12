@@ -3,7 +3,10 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use walkdir::WalkDir;
 
 #[derive(Debug, Clone)]
@@ -56,7 +59,10 @@ pub fn analyze(root: &Path, cancel: Arc<AtomicBool>) -> DiskReport {
             } else {
                 child.metadata().map(|m| m.len()).unwrap_or(0)
             };
-            folders.push(FolderSize { path: child_path, size });
+            folders.push(FolderSize {
+                path: child_path,
+                size,
+            });
         }
     }
 
@@ -83,12 +89,12 @@ pub fn analyze(root: &Path, cancel: Arc<AtomicBool>) -> DiskReport {
         }
     }
 
-    folders.sort_by(|a, b| b.size.cmp(&a.size));
+    folders.sort_by_key(|f| Reverse(f.size));
     let mut largest_files: Vec<FileEntry> = heap
         .into_iter()
         .map(|Reverse((size, path))| FileEntry { path, size })
         .collect();
-    largest_files.sort_by(|a, b| b.size.cmp(&a.size));
+    largest_files.sort_by_key(|f| Reverse(f.size));
 
     DiskReport {
         folders,

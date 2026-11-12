@@ -40,7 +40,11 @@ pub fn run() -> AutoCleanReport {
     let mut report = scanner::clean(&scans, &selected);
 
     // Browser caches only — cookies and history are never touched automatically.
-    let privacy = browsers::clean(browsers::PrivacyOptions { cache: true, cookies: false, history: false });
+    let privacy = browsers::clean(browsers::PrivacyOptions {
+        cache: true,
+        cookies: false,
+        history: false,
+    });
     report.files_removed += privacy.items_removed;
     report.bytes_freed += privacy.bytes_freed;
     report.failures.extend(privacy.failures);

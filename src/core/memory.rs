@@ -1,5 +1,6 @@
 //! Memory stats, process listing and the RAM boost (working-set trim).
 
+use std::cmp::Reverse;
 use sysinfo::{Pid, ProcessesToUpdate, System};
 
 #[derive(Debug, Clone)]
@@ -34,7 +35,7 @@ pub fn collect(sys: &mut System) -> MemoryStats {
             cpu_percent: p.cpu_usage(),
         })
         .collect();
-    processes.sort_by(|a, b| b.memory_bytes.cmp(&a.memory_bytes));
+    processes.sort_by_key(|p| Reverse(p.memory_bytes));
     processes.truncate(40);
 
     MemoryStats {
@@ -48,10 +49,24 @@ pub fn collect(sys: &mut System) -> MemoryStats {
 
 /// Names Windows either forbids terminating or that would take the desktop with them.
 const BLOCKED: &[&str] = &[
-    "system", "idle", "registry", "memory compression", "smss.exe", "csrss.exe",
-    "wininit.exe", "winlogon.exe", "services.exe", "lsass.exe", "lsaiso.exe",
-    "svchost.exe", "dwm.exe", "fontdrvhost.exe", "explorer.exe", "vulture.exe",
-    "sihost.exe", "ctfmon.exe",
+    "system",
+    "idle",
+    "registry",
+    "memory compression",
+    "smss.exe",
+    "csrss.exe",
+    "wininit.exe",
+    "winlogon.exe",
+    "services.exe",
+    "lsass.exe",
+    "lsaiso.exe",
+    "svchost.exe",
+    "dwm.exe",
+    "fontdrvhost.exe",
+    "explorer.exe",
+    "vulture.exe",
+    "sihost.exe",
+    "ctfmon.exe",
 ];
 
 fn is_blocked(name: &str) -> bool {
@@ -65,7 +80,9 @@ fn is_blocked(name: &str) -> bool {
 pub fn boost(sys: &System) -> usize {
     use windows::Win32::Foundation::CloseHandle;
     use windows::Win32::System::ProcessStatus::EmptyWorkingSet;
-    use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_SET_QUOTA};
+    use windows::Win32::System::Threading::{
+        OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_SET_QUOTA,
+    };
 
     let self_pid = std::process::id();
     let mut trimmed = 0usize;
@@ -79,7 +96,11 @@ pub fn boost(sys: &System) -> usize {
             continue;
         }
         unsafe {
-            if let Ok(handle) = OpenProcess(PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION, false, pid_u32) {
+            if let Ok(handle) = OpenProcess(
+                PROCESS_SET_QUOTA | PROCESS_QUERY_INFORMATION,
+                false,
+                pid_u32,
+            ) {
                 if EmptyWorkingSet(handle).is_ok() {
                     trimmed += 1;
                 }
@@ -106,7 +127,10 @@ pub fn kill(sys: &mut System, target: &ProcInfo) -> Result<(), String> {
             if p.kill() {
                 Ok(())
             } else {
-                Err("Windows refused the request (the process may need administrator rights).".to_string())
+                Err(
+                    "Windows refused the request (the process may need administrator rights)."
+                        .to_string(),
+                )
             }
         }
         None => Err("The process already exited.".to_string()),

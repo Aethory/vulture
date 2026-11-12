@@ -91,7 +91,9 @@ fn startup_folder() -> PathBuf {
 fn registry_root(location: &StartupLocation) -> Option<RegKey> {
     match location {
         StartupLocation::HkcuRun => Some(RegKey::predef(HKEY_CURRENT_USER)),
-        StartupLocation::HklmRun | StartupLocation::HklmRunWow64 => Some(RegKey::predef(HKEY_LOCAL_MACHINE)),
+        StartupLocation::HklmRun | StartupLocation::HklmRunWow64 => {
+            Some(RegKey::predef(HKEY_LOCAL_MACHINE))
+        }
         StartupLocation::StartupFolder => None,
     }
 }
@@ -100,7 +102,9 @@ fn registry_subkey(location: &StartupLocation) -> &'static str {
     match location {
         StartupLocation::HkcuRun => r"Software\Microsoft\Windows\CurrentVersion\Run",
         StartupLocation::HklmRun => r"Software\Microsoft\Windows\CurrentVersion\Run",
-        StartupLocation::HklmRunWow64 => r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+        StartupLocation::HklmRunWow64 => {
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"
+        }
         StartupLocation::StartupFolder => "",
     }
 }
@@ -173,7 +177,11 @@ pub fn list() -> Vec<StartupEntry> {
         });
     }
 
-    entries.sort_by(|a, b| b.enabled.cmp(&a.enabled).then(a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+    entries.sort_by(|a, b| {
+        b.enabled
+            .cmp(&a.enabled)
+            .then(a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+    });
     entries
 }
 
@@ -215,12 +223,15 @@ fn disable_entry(entry: &StartupEntry) -> Result<(), String> {
             let subkey = registry_subkey(&entry.location);
             let key = root
                 .open_subkey_with_flags(subkey, KEY_WRITE | KEY_READ)
-                .map_err(|e| format!("No access to this registry key — run Vulture as administrator. ({e})"))?;
+                .map_err(|e| {
+                    format!("No access to this registry key — run Vulture as administrator. ({e})")
+                })?;
             let value: winreg::RegValue = key
                 .get_raw_value(&entry.name)
                 .map_err(|e| format!("Could not read the value before removing it: {e}"))?;
-            key.delete_value(&entry.name)
-                .map_err(|e| format!("Could not remove the value — run Vulture as administrator. ({e})"))?;
+            key.delete_value(&entry.name).map_err(|e| {
+                format!("Could not remove the value — run Vulture as administrator. ({e})")
+            })?;
             backup.entries.push(DisabledEntry {
                 name: entry.name.clone(),
                 command: reg_value_to_command(&value),
@@ -263,7 +274,9 @@ fn enable_entry(entry: &StartupEntry) -> Result<(), String> {
             let subkey = registry_subkey(&record.location);
             let key = root
                 .open_subkey_with_flags(subkey, KEY_WRITE)
-                .map_err(|e| format!("No access to this registry key — run Vulture as administrator. ({e})"))?;
+                .map_err(|e| {
+                    format!("No access to this registry key — run Vulture as administrator. ({e})")
+                })?;
             match &record.reg_bytes {
                 // Restore the exact original value type and payload when we have it.
                 Some(bytes) => {
@@ -277,7 +290,10 @@ fn enable_entry(entry: &StartupEntry) -> Result<(), String> {
                     };
                     key.set_raw_value(
                         &record.name,
-                        &RegValue { vtype, bytes: std::borrow::Cow::Borrowed(bytes.as_slice()) },
+                        &RegValue {
+                            vtype,
+                            bytes: std::borrow::Cow::Borrowed(bytes.as_slice()),
+                        },
                     )
                     .map_err(|e| format!("Could not restore the value: {e}"))?;
                 }

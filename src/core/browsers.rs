@@ -77,14 +77,24 @@ fn chrome_family(name: &'static str, user_data: PathBuf) -> BrowserInfo {
         }
     }
 
-    BrowserInfo { name, data_root: user_data, profiles, cache_dirs, cookie_files, history_files }
+    BrowserInfo {
+        name,
+        data_root: user_data,
+        profiles,
+        cache_dirs,
+        cookie_files,
+        history_files,
+    }
 }
 
 fn firefox() -> BrowserInfo {
     let roaming = env::var("APPDATA").unwrap_or_default();
     let local = env::var("LOCALAPPDATA").unwrap_or_default();
     let roaming_root = PathBuf::from(&roaming).join("Mozilla").join("Firefox");
-    let local_profiles = PathBuf::from(&local).join("Mozilla").join("Firefox").join("Profiles");
+    let local_profiles = PathBuf::from(&local)
+        .join("Mozilla")
+        .join("Firefox")
+        .join("Profiles");
 
     let mut profiles = Vec::new();
     let mut cache_dirs = Vec::new();
@@ -132,11 +142,17 @@ fn firefox() -> BrowserInfo {
 /// Opera keeps a single hard-coded profile directly inside "Opera Stable".
 fn opera() -> BrowserInfo {
     let roaming = env::var("APPDATA").unwrap_or_default();
-    let root = PathBuf::from(&roaming).join("Opera Software").join("Opera Stable");
+    let root = PathBuf::from(&roaming)
+        .join("Opera Software")
+        .join("Opera Stable");
     BrowserInfo {
         name: "Opera",
         data_root: root.clone(),
-        profiles: if root.exists() { vec![root.clone()] } else { Vec::new() },
+        profiles: if root.exists() {
+            vec![root.clone()]
+        } else {
+            Vec::new()
+        },
         cache_dirs: vec![
             root.join("Cache"),
             root.join("Code Cache"),
@@ -151,11 +167,26 @@ pub fn detect_all() -> Vec<BrowserInfo> {
     let local = env::var("LOCALAPPDATA").unwrap_or_default();
 
     vec![
-        chrome_family("Google Chrome", PathBuf::from(&local).join("Google").join("Chrome").join("User Data")),
-        chrome_family("Microsoft Edge", PathBuf::from(&local).join("Microsoft").join("Edge").join("User Data")),
+        chrome_family(
+            "Google Chrome",
+            PathBuf::from(&local)
+                .join("Google")
+                .join("Chrome")
+                .join("User Data"),
+        ),
+        chrome_family(
+            "Microsoft Edge",
+            PathBuf::from(&local)
+                .join("Microsoft")
+                .join("Edge")
+                .join("User Data"),
+        ),
         chrome_family(
             "Brave",
-            PathBuf::from(&local).join("BraveSoftware").join("Brave-Browser").join("User Data"),
+            PathBuf::from(&local)
+                .join("BraveSoftware")
+                .join("Brave-Browser")
+                .join("User Data"),
         ),
         opera(),
         firefox(),
@@ -201,7 +232,11 @@ fn trash_best_effort(path: &Path) -> Result<(u64, u64), String> {
         }
         // Sweep the shells of any now-empty directories (children first).
         // remove_dir() only succeeds on empty dirs, so nothing is force-deleted.
-        for entry in WalkDir::new(path).contents_first(true).into_iter().filter_map(|e| e.ok()) {
+        for entry in WalkDir::new(path)
+            .contents_first(true)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
             if entry.file_type().is_dir() {
                 let _ = fs::remove_dir(entry.path());
             }
@@ -245,9 +280,10 @@ pub fn clean(options: PrivacyOptions) -> PrivacyReport {
                             report.items_removed += 1;
                             report.bytes_freed += file.metadata().map(|m| m.len()).unwrap_or(0);
                         }
-                        Err(_) => report
-                            .failures
-                            .push(format!("{}: cookies are locked — close the browser first.", browser.name)),
+                        Err(_) => report.failures.push(format!(
+                            "{}: cookies are locked — close the browser first.",
+                            browser.name
+                        )),
                     }
                 }
             }
@@ -261,9 +297,10 @@ pub fn clean(options: PrivacyOptions) -> PrivacyReport {
                             report.items_removed += 1;
                             report.bytes_freed += file.metadata().map(|m| m.len()).unwrap_or(0);
                         }
-                        Err(_) => report
-                            .failures
-                            .push(format!("{}: history is locked — close the browser first.", browser.name)),
+                        Err(_) => report.failures.push(format!(
+                            "{}: history is locked — close the browser first.",
+                            browser.name
+                        )),
                     }
                 }
             }

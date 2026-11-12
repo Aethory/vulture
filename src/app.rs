@@ -90,7 +90,11 @@ impl eframe::App for VultureApp {
         egui::Panel::left("nav")
             .exact_size(238.0)
             .resizable(false)
-            .frame(egui::Frame::new().fill(theme::SIDEBAR).inner_margin(egui::Margin::same(14)))
+            .frame(
+                egui::Frame::new()
+                    .fill(theme::SIDEBAR)
+                    .inner_margin(egui::Margin::same(14)),
+            )
             .show(ui, |ui| {
                 ui.add_space(6.0);
                 ui.horizontal(|ui| {
@@ -127,7 +131,14 @@ impl eframe::App for VultureApp {
                                 .color(text),
                         )
                         .fill(fill)
-                        .stroke(egui::Stroke::new(2.0, if selected { accent } else { egui::Color32::TRANSPARENT }))
+                        .stroke(egui::Stroke::new(
+                            2.0,
+                            if selected {
+                                accent
+                            } else {
+                                egui::Color32::TRANSPARENT
+                            },
+                        ))
                         .corner_radius(egui::CornerRadius::same(6))
                         .min_size(egui::vec2(ui.available_width(), 38.0)),
                     );
@@ -140,7 +151,9 @@ impl eframe::App for VultureApp {
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                     ui.horizontal(|ui| {
                         ui.hyperlink_to(
-                            egui::RichText::new("github.com/aethory/vulture").small().color(theme::SIDEBAR_MUTED),
+                            egui::RichText::new("github.com/aethory/vulture")
+                                .small()
+                                .color(theme::SIDEBAR_MUTED),
                             "https://github.com/aethory/vulture",
                         );
                     });
@@ -154,11 +167,19 @@ impl eframe::App for VultureApp {
             });
 
         egui::CentralPanel::default()
-            .frame(egui::Frame::new().fill(theme::PAPER).inner_margin(egui::Margin::same(22)))
+            .frame(
+                egui::Frame::new()
+                    .fill(theme::PAPER)
+                    .inner_margin(egui::Margin::same(22)),
+            )
             .show(ui, |ui| {
-                egui::ScrollArea::vertical().auto_shrink([false; 2]).show(ui, |ui| {
-                    match self.tab {
-                        Tab::Dashboard => self.dashboard.show(ui, &mut self.sys, &mut self.config, accent),
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| match self.tab {
+                        Tab::Dashboard => {
+                            self.dashboard
+                                .show(ui, &mut self.sys, &mut self.config, accent)
+                        }
                         Tab::Cleaner => self.cleaner.show(ui, &mut self.config, accent),
                         Tab::Startup => self.startup.show(ui, accent),
                         Tab::Memory => self.memory.show(ui, &mut self.sys, accent),
@@ -168,10 +189,10 @@ impl eframe::App for VultureApp {
                         Tab::Privacy => self.privacy.show(ui, accent),
                         Tab::Scheduler => self.scheduler.show(ui, accent),
                         Tab::Settings => self.settings.show(ui, &mut self.config),
-                    }
-                });
+                    });
             });
 
-        ui.ctx().request_repaint_after(std::time::Duration::from_secs(2));
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_secs(2));
     }
 }

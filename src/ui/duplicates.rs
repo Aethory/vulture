@@ -6,7 +6,7 @@ use crate::ui::fmt_bytes;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, mpsc};
+use std::sync::{mpsc, Arc};
 use std::thread;
 
 pub struct DuplicatesTab {
@@ -87,7 +87,10 @@ impl DuplicatesTab {
         }
 
         theme::heading(ui, "Duplicate Finder");
-        theme::subtitle(ui, "Content hashing finds bit-for-bit twins — names don't matter.");
+        theme::subtitle(
+            ui,
+            "Content hashing finds bit-for-bit twins — names don't matter.",
+        );
         ui.add_space(14.0);
 
         // Delete confirmation modal.
@@ -159,7 +162,12 @@ impl DuplicatesTab {
         // Controls
         theme::card(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("SCAN TARGET").small().strong().color(theme::MUTED));
+                ui.label(
+                    egui::RichText::new("SCAN TARGET")
+                        .small()
+                        .strong()
+                        .color(theme::MUTED),
+                );
                 ui.label(
                     egui::RichText::new(self.root.display().to_string())
                         .font(egui::FontId::monospace(12.0))
@@ -170,14 +178,18 @@ impl DuplicatesTab {
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 if theme::ghost_button(ui, "Change folder…").clicked() && !self.scanning {
-                    if let Some(dir) = rfd::FileDialog::new().set_directory(&self.root).pick_folder() {
+                    if let Some(dir) = rfd::FileDialog::new()
+                        .set_directory(&self.root)
+                        .pick_folder()
+                    {
                         self.root = dir;
                         self.report = None;
                     }
                 }
                 if self.scanning {
                     if theme::danger_button(ui, "✕ Cancel").clicked() {
-                        self.cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+                        self.cancel
+                            .store(true, std::sync::atomic::Ordering::Relaxed);
                     }
                     ui.spinner();
                     ui.label(egui::RichText::new("Hashing…").strong().color(theme::INK));
@@ -188,13 +200,19 @@ impl DuplicatesTab {
             if self.scanning && !self.log.is_empty() {
                 ui.add_space(8.0);
                 for line in &self.log {
-                    ui.label(egui::RichText::new(line).font(egui::FontId::monospace(10.5)).color(theme::MUTED));
+                    ui.label(
+                        egui::RichText::new(line)
+                            .font(egui::FontId::monospace(10.5))
+                            .color(theme::MUTED),
+                    );
                 }
             }
         });
         ui.add_space(12.0);
 
-        let Some(report) = &self.report else { return; };
+        let Some(report) = &self.report else {
+            return;
+        };
         if let Some(err) = &report.error {
             theme::error_banner(ui, &format!("Scan failed: {err}"));
             return;
@@ -204,7 +222,13 @@ impl DuplicatesTab {
             return;
         }
         if report.groups.is_empty() {
-            theme::success_banner(ui, &format!("No duplicates found across {} files. Squeaky clean.", report.scanned_files));
+            theme::success_banner(
+                ui,
+                &format!(
+                    "No duplicates found across {} files. Squeaky clean.",
+                    report.scanned_files
+                ),
+            );
             return;
         }
 
@@ -240,8 +264,11 @@ impl DuplicatesTab {
                         }
                     }
                     if ui.small_button("SELECT ALL EXTRAS").clicked() {
-                        self.selected =
-                            report.groups.iter().flat_map(|g| g.paths.iter().skip(1).cloned()).collect();
+                        self.selected = report
+                            .groups
+                            .iter()
+                            .flat_map(|g| g.paths.iter().skip(1).cloned())
+                            .collect();
                     }
                     if ui.small_button("CLEAR").clicked() {
                         self.selected.clear();
@@ -251,9 +278,11 @@ impl DuplicatesTab {
         });
         ui.add_space(8.0);
         ui.label(
-            egui::RichText::new("Checked copies will be deleted; the oldest copy in each group stays by default.")
-                .small()
-                .color(theme::MUTED),
+            egui::RichText::new(
+                "Checked copies will be deleted; the oldest copy in each group stays by default.",
+            )
+            .small()
+            .color(theme::MUTED),
         );
         ui.add_space(6.0);
 

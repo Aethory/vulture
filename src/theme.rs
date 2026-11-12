@@ -59,7 +59,12 @@ pub fn card(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::new()
         .fill(INK)
         .corner_radius(CornerRadius::same(6))
-        .inner_margin(Margin { left: 0, top: 0, right: 6, bottom: 6 })
+        .inner_margin(Margin {
+            left: 0,
+            top: 0,
+            right: 6,
+            bottom: 6,
+        })
         .show(ui, |ui| {
             egui::Frame::new()
                 .fill(CARD)
@@ -80,7 +85,11 @@ pub fn heading(ui: &mut egui::Ui, text: &str) {
 }
 
 pub fn subtitle(ui: &mut egui::Ui, text: &str) {
-    ui.label(egui::RichText::new(text).font(FontId::proportional(13.0)).color(MUTED));
+    ui.label(
+        egui::RichText::new(text)
+            .font(FontId::proportional(13.0))
+            .color(MUTED),
+    );
 }
 
 pub fn section_label(ui: &mut egui::Ui, text: &str) {
@@ -139,8 +148,17 @@ pub fn stat_tile(ui: &mut egui::Ui, label: &str, value: &str, sub: &str, value_c
                 .strong()
                 .color(MUTED),
         );
-        ui.label(egui::RichText::new(value).font(FontId::proportional(24.0)).strong().color(value_color));
-        ui.label(egui::RichText::new(sub).font(FontId::proportional(11.0)).color(MUTED));
+        ui.label(
+            egui::RichText::new(value)
+                .font(FontId::proportional(24.0))
+                .strong()
+                .color(value_color),
+        );
+        ui.label(
+            egui::RichText::new(sub)
+                .font(FontId::proportional(11.0))
+                .color(MUTED),
+        );
     });
 }
 
@@ -151,7 +169,11 @@ pub fn success_banner(ui: &mut egui::Ui, text: &str) {
         .corner_radius(CornerRadius::same(6))
         .inner_margin(Margin::same(12))
         .show(ui, |ui| {
-            ui.label(egui::RichText::new(format!("DONE — {text}")).strong().color(Color32::from_rgb(23, 71, 46)));
+            ui.label(
+                egui::RichText::new(format!("DONE — {text}"))
+                    .strong()
+                    .color(Color32::from_rgb(23, 71, 46)),
+            );
         });
 }
 
@@ -162,7 +184,11 @@ pub fn error_banner(ui: &mut egui::Ui, text: &str) {
         .corner_radius(CornerRadius::same(6))
         .inner_margin(Margin::same(12))
         .show(ui, |ui| {
-            ui.label(egui::RichText::new(format!("ERROR — {text}")).strong().color(Color32::from_rgb(95, 31, 15)));
+            ui.label(
+                egui::RichText::new(format!("ERROR — {text}"))
+                    .strong()
+                    .color(Color32::from_rgb(95, 31, 15)),
+            );
         });
 }
 
@@ -184,6 +210,11 @@ pub fn tag(ui: &mut egui::Ui, text: &str) {
         .corner_radius(CornerRadius::same(4))
         .inner_margin(Margin::symmetric(6, 2))
         .show(ui, |ui| {
-            ui.label(egui::RichText::new(text.to_uppercase()).font(FontId::proportional(9.0)).strong().color(PAPER));
+            ui.label(
+                egui::RichText::new(text.to_uppercase())
+                    .font(FontId::proportional(9.0))
+                    .strong()
+                    .color(PAPER),
+            );
         });
 }

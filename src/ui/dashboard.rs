@@ -9,24 +9,13 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use sysinfo::{Disks, System};
 
+#[derive(Default)]
 pub struct DashboardTab {
     working: bool,
     empty_bin: bool,
     rx: Option<Receiver<scanner::CleanReport>>,
     done: Option<scanner::CleanReport>,
     note: Option<String>,
-}
-
-impl Default for DashboardTab {
-    fn default() -> Self {
-        Self {
-            working: false,
-            empty_bin: false,
-            rx: None,
-            done: None,
-            note: None,
-        }
-    }
 }
 
 impl DashboardTab {
@@ -71,7 +60,13 @@ impl DashboardTab {
         });
     }
 
-    pub fn show(&mut self, ui: &mut egui::Ui, sys: &mut System, config: &mut Config, accent: egui::Color32) {
+    pub fn show(
+        &mut self,
+        ui: &mut egui::Ui,
+        sys: &mut System,
+        config: &mut Config,
+        accent: egui::Color32,
+    ) {
         // Poll the worker.
         if let Some(rx) = &self.rx {
             match rx.try_recv() {
@@ -94,7 +89,10 @@ impl DashboardTab {
 
         // Header
         theme::heading(ui, "Mission Control");
-        theme::subtitle(ui, "Your machine at a glance — and the button that feeds Vulture.");
+        theme::subtitle(
+            ui,
+            "Your machine at a glance — and the button that feeds Vulture.",
+        );
         ui.add_space(14.0);
 
         // Live vitals
@@ -122,7 +120,13 @@ impl DashboardTab {
                 &format!("of {total_gb:.0} GB on C:"),
                 theme::INK,
             );
-            theme::stat_tile(ui, "Uptime", &fmt_uptime(uptime), "since last boot", theme::INK);
+            theme::stat_tile(
+                ui,
+                "Uptime",
+                &fmt_uptime(uptime),
+                "since last boot",
+                theme::INK,
+            );
         });
         ui.add_space(14.0);
 
@@ -221,7 +225,11 @@ impl DashboardTab {
             theme::card(&mut cols[0], |ui| {
                 theme::section_label(ui, "Lifetime");
                 ui.add_space(6.0);
-                ui.label(egui::RichText::new(format!("{} cleans run", config.clean_runs)).strong().color(theme::INK));
+                ui.label(
+                    egui::RichText::new(format!("{} cleans run", config.clean_runs))
+                        .strong()
+                        .color(theme::INK),
+                );
                 ui.label(
                     egui::RichText::new(format!(
                         "Last clean: {} — freed {}",
@@ -234,9 +242,17 @@ impl DashboardTab {
             theme::card(&mut cols[1], |ui| {
                 theme::section_label(ui, "Field Manual");
                 ui.add_space(6.0);
-                ui.label(egui::RichText::new("• Run Vulture weekly — junk regrows.").color(theme::INK));
-                ui.label(egui::RichText::new("• Smart Clean never touches cookies or history.").color(theme::INK));
-                ui.label(egui::RichText::new("• Everything goes to the Recycle Bin first.").color(theme::INK));
+                ui.label(
+                    egui::RichText::new("• Run Vulture weekly — junk regrows.").color(theme::INK),
+                );
+                ui.label(
+                    egui::RichText::new("• Smart Clean never touches cookies or history.")
+                        .color(theme::INK),
+                );
+                ui.label(
+                    egui::RichText::new("• Everything goes to the Recycle Bin first.")
+                        .color(theme::INK),
+                );
             });
         });
     }
@@ -254,11 +270,10 @@ fn disk_free() -> (f64, f64) {
         .find(|d| d.mount_point() == system_drive)
         .or_else(|| list.first());
     match disk {
-        Some(d) => {
-            (d.available_space() as f64 / 1_073_741_824.0, d.total_space() as f64 / 1_073_741_824.0)
-        }
+        Some(d) => (
+            d.available_space() as f64 / 1_073_741_824.0,
+            d.total_space() as f64 / 1_073_741_824.0,
+        ),
         None => (0.0, 0.0),
     }
 }
-
-
