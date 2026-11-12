@@ -102,3 +102,44 @@ pub fn analyze(root: &Path, cancel: Arc<AtomicBool>) -> DiskReport {
         cancelled: cancel.load(Ordering::Relaxed),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    fn temp_root(tag: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("vulture-test-{}-{tag}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn analyze_finds_largest_files() {
+        let root = temp_root("analyze");
+        fs::write(root.join("small.bin"), vec![0u8; 10]).unwrap();
+        let sub = root.join("sub");
+        fs::create_dir_all(&sub).unwrap();
+        fs::write(sub.join("big.bin"), vec![0u8; 5000]).unwrap();
+
+        let cancel = Arc::new(AtomicBool::new(false));
+        let report = analyze(&root, cancel);
+
+        assert!(!report.cancelled);
+        assert!(!report.largest_files.is_empty());
+        assert_eq!(report.largest_files[0].size, 5000);
+        assert!(!report.folders.is_empty());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn analyze_honours_cancel_flag() {
+        let root = temp_root("cancel");
+        fs::write(root.join("a.bin"), vec![0u8; 10]).unwrap();
+        let cancel = Arc::new(AtomicBool::new(true)); // pre-cancelled
+        let report = analyze(&root, cancel);
+        assert!(report.cancelled);
+        let _ = fs::remove_dir_all(&root);
+    }
+}

@@ -193,3 +193,83 @@ pub fn delete(paths: &[PathBuf]) -> DupDeleteReport {
     }
     report
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wasted_bytes_counts_extra_copies() {
+        let group = DuplicateGroup {
+            size: 100,
+            paths: vec![PathBuf::from("a"), PathBuf::from("b"), PathBuf::from("c")],
+        };
+        assert_eq!(group.wasted_bytes(), 200);
+    }
+
+    #[test]
+    fn report_totals() {
+        let report = DuplicateReport {
+            scanned_files: 10,
+            groups: vec![
+                DuplicateGroup { size: 10, paths: vec![PathBuf::from("a"), PathBuf::from("b")] },
+                DuplicateGroup { size: 50, paths: vec![PathBuf::from("c"), PathBuf::from("d"), PathBuf::from("e")] },
+            ],
+            cancelled: false,
+            error: None,
+        };
+        assert_eq!(report.wasted_bytes(), 10 + 100);
+        assert_eq!(report.extra_copies(), 3);
+    }
+
+    #[test]
+    fn scan_finds_identical_files() {
+        let root = std::env::temp_dir().join(format!("vulture-test-dup-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("x.bin"), b"identical-content").unwrap();
+        fs::write(root.join("y.bin"), b"identical-content").unwrap();
+        fs::write(root.join("z.bin"), b"different-content").unwrap();
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        let cancel = Arc::new(AtomicBool::new(false));
+        scan(&root, cancel, tx);
+
+        let mut result = None;
+        for msg in rx.iter() {
+            if let DupMsg::Done(report) = msg {
+                result = Some(report);
+                break;
+            }
+        }
+        let report = result.expect("scan should finish");
+        assert!(report.error.is_none());
+        assert_eq!(report.groups.len(), 1);
+        assert_eq!(report.groups[0].paths.len(), 2);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn scan_honours_cancel_flag() {
+        let root = std::env::temp_dir().join(format!("vulture-test-dupcancel-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        for i in 0..10 {
+            fs::write(root.join(format!("f{i}.bin")), b"same-same-same-same").unwrap();
+        }
+        let (tx, rx) = std::sync::mpsc::channel();
+        let cancel = Arc::new(AtomicBool::new(true)); // pre-cancelled
+        scan(&root, cancel, tx);
+        let mut result = None;
+        for msg in rx.iter() {
+            if let DupMsg::Done(report) = msg {
+                result = Some(report);
+                break;
+            }
+        }
+        let report = result.expect("scan should finish");
+        assert!(report.cancelled);
+        assert!(report.groups.is_empty());
+        let _ = fs::remove_dir_all(&root);
+    }
+}

@@ -261,3 +261,72 @@ pub fn empty_recycle_bin() -> Result<(), String> {
     };
     result.map_err(|e| format!("Could not empty the Recycle Bin: {e}"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_root(tag: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("vulture-test-{}-{tag}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn categories_have_unique_ids_and_labels() {
+        let cats = categories();
+        assert!(cats.len() >= 8);
+        let mut ids = std::collections::HashSet::new();
+        for c in &cats {
+            assert!(!c.label.is_empty());
+            assert!(!c.paths.is_empty());
+            assert!(ids.insert(c.id), "duplicate CategoryId in registry");
+        }
+    }
+
+    #[test]
+    fn scan_one_filters_by_extension() {
+        let root = temp_root("ext-filter");
+        fs::write(root.join("a.dmp"), b"1234").unwrap();
+        fs::write(root.join("b.txt"), b"1234").unwrap();
+        fs::write(root.join("c.DMP"), b"12").unwrap(); // case-insensitive match
+        let def = CategoryDef::new(CategoryId::CrashDumps, "test", "test", false, vec![root.clone()])
+            .extension(".dmp");
+        let scan = scan_one(def);
+        assert_eq!(scan.items.len(), 2);
+        assert_eq!(scan.bytes, 6);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn scan_one_filters_by_prefix() {
+        let root = temp_root("prefix-filter");
+        fs::write(root.join("thumbcache_32.db"), b"1234").unwrap();
+        fs::write(root.join("iconcache_32.db"), b"12").unwrap();
+        let def = CategoryDef::new(CategoryId::Thumbnails, "test", "test", false, vec![root.clone()])
+            .prefix("thumbcache_");
+        let scan = scan_one(def);
+        assert_eq!(scan.items.len(), 1);
+        assert_eq!(scan.bytes, 4);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn scan_one_reports_missing_paths_as_clean() {
+        let root = temp_root("missing").join("does-not-exist");
+        let def = CategoryDef::new(CategoryId::WindowsTemp, "test", "test", false, vec![root]);
+        let scan = scan_one(def);
+        assert_eq!(scan.items.len(), 0);
+        assert_eq!(scan.bytes, 0);
+        assert!(scan.error.is_none());
+    }
+
+    #[test]
+    fn clean_report_defaults_are_zero() {
+        let report = CleanReport::default();
+        assert_eq!(report.files_removed, 0);
+        assert_eq!(report.bytes_freed, 0);
+        assert!(report.failures.is_empty());
+    }
+}

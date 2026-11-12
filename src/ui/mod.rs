@@ -33,3 +33,21 @@ pub fn fmt_uptime(secs: u64) -> String {
         format!("{mins}m")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uptime_formats_compactly() {
+        assert_eq!(fmt_uptime(45), "0m");
+        assert_eq!(fmt_uptime(3_600 * 2 + 90), "2h 1m");
+        assert_eq!(fmt_uptime(86_400 * 3 + 3600 * 4), "3d 4h");
+    }
+
+    #[test]
+    fn fmt_gb_is_exact_for_gib() {
+        assert_eq!(fmt_gb(1_073_741_824), "1.0 GB");
+        assert_eq!(fmt_gb(0), "0.0 GB");
+    }
+}

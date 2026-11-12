@@ -309,3 +309,42 @@ fn enable_entry(entry: &StartupEntry) -> Result<(), String> {
     save_backup(&backup);
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn utf16le(s: &str) -> Vec<u8> {
+        s.encode_utf16().flat_map(|u| u.to_le_bytes()).collect()
+    }
+
+    #[test]
+    fn reg_value_to_command_decodes_utf16le_and_trims_nulls() {
+        let mut bytes = utf16le(r"C:\Tools\app.exe --flag");
+        bytes.extend_from_slice(&[0, 0]);
+        let value = winreg::RegValue { vtype: winreg::enums::REG_SZ, bytes: std::borrow::Cow::Owned(bytes) };
+        assert_eq!(reg_value_to_command(&value), r"C:\Tools\app.exe --flag");
+    }
+
+    #[test]
+    fn disabled_entry_roundtrips_through_json() {
+        let json = r#"{"entries":[{"name":"TestApp","command":"C:\\app.exe","location":"HkcuRun","folder_backup":null,"reg_type":"REG_EXPAND_SZ","reg_bytes":[65,0,0,0]}]}"#;
+        let backup: DisabledBackup = serde_json::from_str(json).unwrap();
+        assert_eq!(backup.entries.len(), 1);
+        assert_eq!(backup.entries[0].reg_type.as_deref(), Some("REG_EXPAND_SZ"));
+        assert_eq!(backup.entries[0].reg_bytes.as_deref(), Some(&[65u8, 0, 0, 0][..]));
+
+        let encoded = serde_json::to_string(&backup).unwrap();
+        let decoded: DisabledBackup = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(decoded.entries[0].name, "TestApp");
+    }
+
+    #[test]
+    fn legacy_backup_without_raw_fields_still_deserializes() {
+        let json = r#"{"entries":[{"name":"Old","command":"C:\\old.exe","location":"HkcuRun","folder_backup":null}]}"#;
+        let backup: DisabledBackup = serde_json::from_str(json).unwrap();
+        assert_eq!(backup.entries.len(), 1);
+        assert!(backup.entries[0].reg_bytes.is_none());
+        assert!(backup.entries[0].reg_type.is_none());
+    }
+}

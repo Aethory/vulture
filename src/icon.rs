@@ -61,3 +61,20 @@ fn point_seg_distance(px: f32, py: f32, ax: f32, ay: f32, bx: f32, by: f32) -> f
     let cy = ay + t * aby;
     (px - cx).hypot(py - cy)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn point_seg_distance_handles_degenerate_segment() {
+        let d = point_seg_distance(0.0, 0.0, 3.0, 4.0, 3.0, 4.0);
+        assert!((d - 5.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn point_seg_distance_is_zero_on_the_segment() {
+        let d = point_seg_distance(5.0, 0.0, 0.0, 0.0, 10.0, 0.0);
+        assert!(d.abs() < 1e-6);
+    }
+}
