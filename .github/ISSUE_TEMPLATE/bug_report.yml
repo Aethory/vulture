@@ -1,0 +1,40 @@
+name: Bug report
+description: Something broke, crashed or misbehaved
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - Dashboard
+        - Smart Clean
+        - Startup Manager
+        - RAM Booster
+        - Disk Analyzer
+        - Duplicate Finder
+        - Uninstaller
+        - Privacy
+        - Auto Clean
+        - Settings
+        - Build / other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Steps to reproduce, what you expected, what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste anything from %APPDATA%\Vulture\logs\ or your terminal.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Vulture version
+      placeholder: v1.0.0
