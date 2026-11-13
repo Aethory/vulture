@@ -104,6 +104,40 @@ pub fn list() -> Vec<InstalledApp> {
     apps
 }
 
+/// Split an UninstallString into (program, args). Handles a quoted program with
+/// spaces (`"C:\foo bar\unins000.exe" /S`), an unquoted path followed by switches,
+/// and msiexec-style `msiexec /I{guid}` invocations.
+pub fn parse_uninstall_command(command: &str) -> Option<(String, String)> {
+    let command = command.trim();
+    if command.is_empty() {
+        return None;
+    }
+    if let Some(rest) = command.strip_prefix('"') {
+        // Quoted program: everything up to the closing quote.
+        let end = rest.find('"')?;
+        let program = rest[..end].trim().to_string();
+        let args = rest[end + 1..].trim().to_string();
+        return (!program.is_empty()).then_some((program, args));
+    }
+    // Unquoted: the executable usually carries an extension; find its end by
+    // scanning for the first .exe / .bat / .cmd / .msi token.
+    let lower = command.to_lowercase();
+    for ext in [".exe", ".bat", ".cmd", ".msi"] {
+        if let Some(pos) = lower.find(ext) {
+            let program = command[..pos + ext.len()].trim().to_string();
+            let args = command[pos + ext.len()..].trim().to_string();
+            if !program.is_empty() {
+                return Some((program, args));
+            }
+        }
+    }
+    // No recognizable executable (e.g. `msiexec ...`): first word is the program.
+    let mut parts = command.splitn(2, char::is_whitespace);
+    let program = parts.next()?.trim().to_string();
+    let args = parts.next().unwrap_or("").trim().to_string();
+    (!program.is_empty()).then_some((program, args))
+}
+
 /// Launch the program's uninstaller. Prefers the interactive uninstall string
 /// — a one-click quiet uninstall would run with zero prompts, so the silent
 /// switch is only a fallback for entries that ship no interactive command.
@@ -121,8 +155,25 @@ pub fn launch_uninstaller(app: &InstalledApp) -> Result<(), String> {
         );
     }
 
+    // Pre-flight: if the uninstaller is a clear absolute path that is gone, fail
+    // NOW instead of reporting a phantom success from a fire-and-forget spawn.
+    if let Some((program, _)) = parse_uninstall_command(command) {
+        let looks_like_absolute = program.len() >= 3
+            && program.as_bytes()[1] == b':'
+            && [".exe", ".bat", ".cmd", ".msi"]
+                .iter()
+                .any(|ext| program.to_lowercase().ends_with(ext));
+        if looks_like_absolute && !std::path::Path::new(&program).exists() {
+            return Err(format!(
+                "Uninstaller not found at {program} — it may have been removed already."
+            ));
+        }
+    }
+
+    // /S tells cmd to strip the outer quotes being added — otherwise the
+    // registry's quoted, space-laden paths break cmd's /C parsing ("not recognized").
     std::process::Command::new("cmd")
-        .args(["/C", command])
+        .args(["/S", "/C", command])
         .spawn()
         .map(|_| ())
         .map_err(|e| format!("Could not start the uninstaller: {e}"))
@@ -136,5 +187,51 @@ pub fn open_install_folder(app: &InstalledApp) -> Result<(), String> {
             .map(|_| ())
             .map_err(|e| format!("Could not open Explorer: {e}")),
         _ => Err("No install location recorded for this program.".to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_quoted_path_with_spaces() {
+        let (program, args) =
+            parse_uninstall_command(r#""C:\Games\Grand Theft Auto V Enhanced\unins000.exe""#)
+                .unwrap();
+        assert_eq!(
+            program,
+            r"C:\Games\Grand Theft Auto V Enhanced\unins000.exe"
+        );
+        assert_eq!(args, "");
+    }
+
+    #[test]
+    fn parses_quoted_path_with_args() {
+        let (program, args) =
+            parse_uninstall_command(r#""C:\Foo Bar\unins.exe" /S /NORESTART"#).unwrap();
+        assert_eq!(program, r"C:\Foo Bar\unins.exe");
+        assert_eq!(args, "/S /NORESTART");
+    }
+
+    #[test]
+    fn parses_unquoted_path_with_spaces() {
+        let (program, args) =
+            parse_uninstall_command(r"C:\Program Files\Foo\unins.exe /S").unwrap();
+        assert_eq!(program, r"C:\Program Files\Foo\unins.exe");
+        assert_eq!(args, "/S");
+    }
+
+    #[test]
+    fn parses_msiexec_invocation() {
+        let (program, args) =
+            parse_uninstall_command(r"msiexec /I{83D41AC9-7E8C-11ED-A812-0242AC120003}").unwrap();
+        assert_eq!(program, "msiexec");
+        assert!(args.starts_with("/I"));
+    }
+
+    #[test]
+    fn rejects_empty_command() {
+        assert!(parse_uninstall_command("   ").is_none());
     }
 }

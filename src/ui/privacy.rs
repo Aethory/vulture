@@ -150,7 +150,7 @@ impl PrivacyTab {
                         .inner_margin(egui::Margin::same(9))
                         .show(ui, |ui| {
                             ui.label(
-                                egui::RichText::new(if detected { "●" } else { "○" })
+                                egui::RichText::new(if detected { "•" } else { "·" })
                                     .color(theme::INK),
                             );
                         });

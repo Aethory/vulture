@@ -141,7 +141,7 @@ pub fn ghost_button(ui: &mut egui::Ui, text: &str) -> egui::Response {
 
 pub fn stat_tile(ui: &mut egui::Ui, label: &str, value: &str, sub: &str, value_color: Color32) {
     card(ui, |ui| {
-        ui.set_min_size(egui::vec2(158.0, 92.0));
+        ui.set_min_size(egui::vec2(0.0, 92.0));
         ui.label(
             egui::RichText::new(label.to_uppercase())
                 .font(FontId::proportional(10.0))

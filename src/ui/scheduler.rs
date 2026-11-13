@@ -140,7 +140,7 @@ impl SchedulerTab {
                 ui.horizontal(|ui| {
                     theme::section_label(ui, "Run logs");
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if theme::ghost_button(ui, "↻ Refresh").clicked() {
+                        if theme::ghost_button(ui, "Refresh").clicked() {
                             self.refresh();
                         }
                     });

@@ -91,7 +91,7 @@ impl DiskTab {
                     }
                 }
                 if self.analyzing {
-                    if theme::danger_button(ui, "✕ Cancel").clicked() {
+                    if theme::danger_button(ui, "Cancel").clicked() {
                         if let Some(cancel) = &self.cancel {
                             cancel.store(true, std::sync::atomic::Ordering::Relaxed);
                         }

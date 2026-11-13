@@ -187,7 +187,7 @@ impl DuplicatesTab {
                     }
                 }
                 if self.scanning {
-                    if theme::danger_button(ui, "✕ Cancel").clicked() {
+                    if theme::danger_button(ui, "Cancel").clicked() {
                         self.cancel
                             .store(true, std::sync::atomic::Ordering::Relaxed);
                     }

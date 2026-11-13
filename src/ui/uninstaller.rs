@@ -46,7 +46,7 @@ impl UninstallerTab {
                     .margin(egui::vec2(8.0, 6.0)),
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if theme::ghost_button(ui, "↻ Rescan").clicked() {
+                if theme::ghost_button(ui, "Rescan").clicked() {
                     self.apps = Some(uninstall::list());
                 }
                 let total = self.apps.as_ref().map(|a| a.len()).unwrap_or(0);

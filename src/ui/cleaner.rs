@@ -137,7 +137,7 @@ impl CleanerTab {
                     });
             }
             ui.add_space(8.0);
-            if theme::ghost_button(ui, "↻ Scan again").clicked() {
+            if theme::ghost_button(ui, "Scan again").clicked() {
                 self.start_scan();
             }
             ui.add_space(12.0);
@@ -210,7 +210,7 @@ impl CleanerTab {
                             if let Some(err) = &scan.error {
                                 ui.horizontal(|ui| {
                                     ui.add_space(26.0);
-                                    ui.label(egui::RichText::new(format!("⚠ {err}")).small().color(theme::RED));
+                                    ui.label(egui::RichText::new(err.clone()).small().color(theme::RED));
                                 });
                             }
                             ui.add_space(6.0);

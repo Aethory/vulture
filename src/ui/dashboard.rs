@@ -7,7 +7,20 @@ use crate::ui::{fmt_bytes, fmt_gb, fmt_uptime};
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver};
 use std::thread;
+use std::time::Instant;
 use sysinfo::{Disks, System};
+
+/// Cached vital signs — refreshing CPU every paint makes sysinfo's delta
+/// window meaninglessly small and the number flaps wildly.
+#[derive(Clone, Copy)]
+struct Vitals {
+    cpu: f32,
+    mem_used: u64,
+    mem_total: u64,
+    uptime: u64,
+    free_gb: f64,
+    total_gb: f64,
+}
 
 #[derive(Default)]
 pub struct DashboardTab {
@@ -16,6 +29,8 @@ pub struct DashboardTab {
     rx: Option<Receiver<scanner::CleanReport>>,
     done: Option<scanner::CleanReport>,
     note: Option<String>,
+    vitals: Option<Vitals>,
+    vitals_at: Option<Instant>,
 }
 
 impl DashboardTab {
@@ -95,16 +110,42 @@ impl DashboardTab {
         );
         ui.add_space(14.0);
 
-        // Live vitals
-        sys.refresh_memory();
-        sys.refresh_cpu_usage();
-        let cpu = sys.global_cpu_usage();
-        let mem_used = sys.used_memory();
-        let mem_total = sys.total_memory();
-        let uptime = System::uptime().unwrap_or(0);
-        let (free_gb, total_gb) = disk_free();
+        // Live vitals — cached for 2s, not re-polled every paint.
+        let refresh = self
+            .vitals_at
+            .map(|at| at.elapsed() >= std::time::Duration::from_secs(2))
+            .unwrap_or(true);
+        if refresh {
+            sys.refresh_memory();
+            sys.refresh_cpu_usage();
+            let (free_gb, total_gb) = disk_free();
+            self.vitals = Some(Vitals {
+                cpu: sys.global_cpu_usage(),
+                mem_used: sys.used_memory(),
+                mem_total: sys.total_memory(),
+                uptime: System::uptime().unwrap_or(0),
+                free_gb,
+                total_gb,
+            });
+            self.vitals_at = Some(Instant::now());
+        }
+        let Vitals {
+            cpu,
+            mem_used,
+            mem_total,
+            uptime,
+            free_gb,
+            total_gb,
+        } = self.vitals.unwrap_or(Vitals {
+            cpu: 0.0,
+            mem_used: 0,
+            mem_total: 0,
+            uptime: 0,
+            free_gb: 0.0,
+            total_gb: 0.0,
+        });
 
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             theme::stat_tile(ui, "CPU", &format!("{cpu:.0}%"), "global load", theme::INK);
             theme::stat_tile(
                 ui,
@@ -132,7 +173,7 @@ impl DashboardTab {
 
         // Smart clean — the hero
         theme::card(ui, |ui| {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.vertical(|ui| {
                     ui.label(
                         egui::RichText::new("ONE-CLICK SMART CLEAN")
@@ -153,7 +194,7 @@ impl DashboardTab {
                             ui.spinner();
                             ui.label(egui::RichText::new("Hunting junk…").strong().color(theme::INK));
                         });
-                    } else if theme::primary_button(ui, "⚡ Smart Clean — Feed the Vulture", accent).clicked() {
+                    } else if theme::primary_button(ui, "Smart Clean — Feed the Vulture", accent).clicked() {
                         self.start_smart_clean(self.empty_bin);
                     }
 

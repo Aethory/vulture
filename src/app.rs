@@ -20,16 +20,16 @@ enum Tab {
 }
 
 const NAV: &[(Tab, &str, &str)] = &[
-    (Tab::Dashboard, "📊", "Dashboard"),
-    (Tab::Cleaner, "🧹", "Smart Clean"),
-    (Tab::Startup, "🚀", "Startup"),
-    (Tab::Memory, "⚡", "RAM Booster"),
-    (Tab::Disk, "💽", "Disk Analyzer"),
-    (Tab::Duplicates, "🧬", "Duplicates"),
-    (Tab::Uninstaller, "🗑️", "Uninstaller"),
-    (Tab::Privacy, "🍪", "Privacy"),
-    (Tab::Scheduler, "⏰", "Auto Clean"),
-    (Tab::Settings, "⚙️", "Settings"),
+    (Tab::Dashboard, "01", "Dashboard"),
+    (Tab::Cleaner, "02", "Smart Clean"),
+    (Tab::Startup, "03", "Startup"),
+    (Tab::Memory, "04", "RAM Booster"),
+    (Tab::Disk, "05", "Disk Analyzer"),
+    (Tab::Duplicates, "06", "Duplicates"),
+    (Tab::Uninstaller, "07", "Uninstaller"),
+    (Tab::Privacy, "08", "Privacy"),
+    (Tab::Scheduler, "09", "Auto Clean"),
+    (Tab::Settings, "10", "Settings"),
 ];
 
 pub struct VultureApp {

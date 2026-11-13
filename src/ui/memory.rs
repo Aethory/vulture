@@ -97,14 +97,14 @@ impl MemoryTab {
                         .color(theme::MUTED),
                     );
                     ui.add_space(10.0);
-                    if theme::primary_button(ui, "⚡ Boost now", accent).clicked() {
+                    if theme::primary_button(ui, "Boost now", accent).clicked() {
                         let trimmed = memory::boost(sys);
                         self.boost_note = Some(format!("Working sets trimmed on {trimmed} processes."));
                         self.kill_error = None;
                     }
                     if let Some(note) = &self.boost_note {
                         ui.add_space(8.0);
-                        ui.label(egui::RichText::new(format!("✓ {note}")).strong().color(theme::GREEN));
+                        ui.label(egui::RichText::new(note.clone()).strong().color(theme::GREEN));
                     }
                     if let Some(err) = &self.kill_error {
                         ui.add_space(8.0);
@@ -120,7 +120,7 @@ impl MemoryTab {
                 ui.horizontal(|ui| {
                     theme::section_label(ui, "Memory hogs — top 40");
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if theme::ghost_button(ui, "↻ Refresh").clicked() {
+                        if theme::ghost_button(ui, "Refresh").clicked() {
                             self.stats = Some(memory::collect(sys));
                             self.sys_side = Instant::now();
                         }

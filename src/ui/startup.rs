@@ -37,7 +37,7 @@ impl StartupTab {
             theme::tag(ui, &format!("{enabled} enabled"));
             theme::tag(ui, &format!("{disabled} disabled"));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if theme::ghost_button(ui, "↻ Refresh").clicked() {
+                if theme::ghost_button(ui, "Refresh").clicked() {
                     self.entries = Some(startup::list());
                 }
             });
